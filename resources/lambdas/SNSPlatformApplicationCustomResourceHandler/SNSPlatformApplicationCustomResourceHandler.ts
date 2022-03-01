@@ -36,6 +36,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
         this.platform = options.platform
         this.attributes = options.attributes
         this.debug = options.debug ?? false
+        this.apns = options.apns
     }
 
     private buildAttributes(): { [key: string]: string } {
