@@ -12,64 +12,57 @@ type APNSSecret = {
     teamId: string
 }
 
+export type ResourceAttributes = {
+    name: string
+    platform: SNSPlatformApplicationPlatforms
+    attributes: { [key: string]: any },
+    region: string
+    account: string
+    signingKeyId: string
+    signingKeySecretName: string
+    appBundleId: string
+    teamId: string
+    debug: boolean
+}
+
 export type SNSPlatformApplicationCustomResourceHandlerOptions = {
     snsClient: SNSClient,
     secretsClient: SecretsManagerClient
-    name: string
-    platform: SNSPlatformApplicationPlatforms
-    attributes?: { [key: string]: string }
-    debug?: boolean
-    secretName: string
 }
 
 export class SNSPlatformApplicationCustomResourceHandler {
 
     private snsClient: SNSClient
     private secretsClient: SecretsManagerClient
-    private name: string
-    private platform: SNSPlatformApplicationPlatforms
-    private attributes?: { [key: string]: string }
-    private debug: boolean
-    private secretName: string
+    private attributes: ResourceAttributes
 
-    constructor(options: SNSPlatformApplicationCustomResourceHandlerOptions){
+    constructor(options: SNSPlatformApplicationCustomResourceHandlerOptions, attributes: ResourceAttributes){
         this.snsClient = options.snsClient
         this.secretsClient = options.secretsClient
-        this.name = options.name
-        this.platform = options.platform
-        this.attributes = options.attributes
-        this.debug = options.debug ?? false
-        this.secretName = options.secretName
+        this.attributes = attributes
     }
 
-    private async fetchSecret(): Promise<string | undefined> {
-        const command = new GetSecretValueCommand({ SecretId: this.secretName })
+    private async fetchSigningKeySecret(): Promise<string> {
+        const command = new GetSecretValueCommand({ SecretId: this.attributes.signingKeySecretName })
         const result = await this.secretsClient.send(command)
+        if(!result.SecretString) throw new Error(`Unable to fetch the signingKey secret. Make sure you manually created the secret: ${this.attributes.signingKeySecretName}`)
         return result.SecretString
     }
 
     private async buildAttributes(): Promise<{ [key: string]: string }> {
-        const secret = await this.fetchSecret()
-        if(!secret) throw new Error(`Unable to get secret value. Make sure you manually created this secret with the correct format: ${this.secretName}`)
-        
-        const attributes = this.attributes ?? {}
-        if(this.platform === 'APNS' || this.platform === 'APNS_SANDBOX'){
-            const apnsSecret = JSON.parse(secret) as APNSSecret
+        const attributes: { [key: string]: any } = this.attributes ?? {}
 
-            if(!apnsSecret.signingKey) throw new Error(`The SNS Platform Application Resource requires the secret named '${this.secretName}' to have a 'signingKey' value that is contents of the token downloaded from the Apple Developer portal.`)
-            if(!apnsSecret.signingKeyId) throw new Error(`The SNS Platform Application Resource requires the secret named '${this.secretName}' to have a 'signingKeyId' value found in the Apple Developer portal.`)
-            if(!apnsSecret.appBundleId) throw new Error(`The SNS Platform Application Resource requires the secret named '${this.secretName}' to have a 'appBundleId' value from your iOS app.`)
-            if(!apnsSecret.teamId) throw new Error(`The SNS Platform Application Resource requires the secret named '${this.secretName}' to have a 'teamId' value from the Apple Developer portal.`)
-            
-            console.log('RETRIEVED AND VALIDATED APNS SECRET', apnsSecret)
+        if(this.attributes.platform === 'APNS' || this.attributes.platform === 'APNS_SANDBOX'){
+            const signingKey = await this.fetchSigningKeySecret()
 
-            attributes['PlatformCredential'] = apnsSecret.signingKey
-            attributes['PlatformPrincipal'] = apnsSecret.signingKeyId
-            attributes['ApplePlatformBundleID'] = apnsSecret.appBundleId
-            attributes['ApplePlatformTeamID'] = apnsSecret.teamId
+            attributes['PlatformCredential'] = signingKey
+            attributes['PlatformPrincipal'] = this.attributes.signingKeyId
+            attributes['ApplePlatformBundleID'] = this.attributes.appBundleId
+            attributes['ApplePlatformTeamID'] = this.attributes.teamId
         }
 
-        if(this.debug) console.log(`PLATFORM APPLICATION ATTRIBUTES: `, attributes)
+        if(this.attributes.debug) console.log(`PLATFORM APPLICATION ATTRIBUTES: `, attributes)
+
         return attributes
     }
 
@@ -85,20 +78,20 @@ export class SNSPlatformApplicationCustomResourceHandler {
     }
 
     async onCreate(): Promise<CdkCustomResourceResponse> {
-        console.log('CREATING PLATFORM APPLICATION: ', this.name, this.platform)
+        console.log('CREATING PLATFORM APPLICATION: ', this.attributes.name, this.attributes.platform)
         const command = new CreatePlatformApplicationCommand({
-            Name: this.name,
-            Platform: this.platform,
+            Name: this.attributes.name,
+            Platform: this.attributes.platform,
             Attributes: await this.buildAttributes()
         })
         console.log('CREATING PLATFORM APPLICATION - COMMAND: ', command)
         const result = await this.snsClient.send(command)
 
-        return this.buildResponse(`Custom::GG-SNSPlatformApplication:${this.name}:${this.platform}`, { PlatformApplicationArn: result.PlatformApplicationArn! })
+        return this.buildResponse(`Custom::GG-SNSPlatformApplication:${this.attributes.name}:${this.attributes.platform}`, { PlatformApplicationArn: result.PlatformApplicationArn! })
     }
 
     async onUpdate(physicalResourceId: string): Promise<CdkCustomResourceResponse> {
-        const platformApplication = await this.findPlatformApplicationByNameAndPlatform(this.name, this.platform)
+        const platformApplication = await this.findPlatformApplicationByNameAndPlatform(this.attributes.name, this.attributes.platform)
         console.log('FOUND APP - UPDATING', platformApplication.PlatformApplicationArn)
 
         const command = new SetPlatformApplicationAttributesCommand({
@@ -114,7 +107,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
     }
 
     async onDelete(physicalResourceId: string): Promise<CdkCustomResourceResponse> {
-        const platformApplication = await this.findPlatformApplicationByNameAndPlatform(this.name, this.platform)
+        const platformApplication = await this.findPlatformApplicationByNameAndPlatform(this.attributes.name, this.attributes.platform)
         console.log('FOUND APP - DELETING', platformApplication.PlatformApplicationArn)
 
         const command = new DeletePlatformApplicationCommand({
