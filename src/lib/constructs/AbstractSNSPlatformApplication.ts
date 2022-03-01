@@ -35,6 +35,7 @@ export abstract class AbstractSNSPlatformApplication extends Construct {
         this.attributes = options.attributes
 
         this.role = this.setupRole()
+        this.afterRoleCreation()
         this.onEventHandler = this.setupEventHandler(this.role)
 
         this.provider = new Provider(this, 'Provider', {
@@ -53,6 +54,10 @@ export abstract class AbstractSNSPlatformApplication extends Construct {
     abstract resourceType(): string
 
     abstract buildEventHandlerProperties(): { [key: string]: string }
+
+    afterRoleCreation(){
+        // no-op
+    }
 
     protected setupRole(): Role {
         return new Role(this, `Role`, {
@@ -77,7 +82,7 @@ export abstract class AbstractSNSPlatformApplication extends Construct {
                     ]
                 })
             },
-            description: `Used to execute the @general-galactic/cdk-resources -> ${this.node.id} lamda`
+            description: `Used to execute the @general-galactic/cdk-resources -> ${this.node.id} event handler lamda`
         })
     }
 

@@ -1,4 +1,4 @@
-import { CustomResource, RemovalPolicy, Stack } from 'aws-cdk-lib'
+import { Stack } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import { ISecret, Secret } from 'aws-cdk-lib/aws-secretsmanager'
 import { AbstractSNSPlatformApplication, AbstractSNSPlatformApplicationOptions } from './AbstractSNSPlatformApplication'
@@ -20,7 +20,7 @@ export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
     readonly signingKeySecretName: string
     readonly appBundleId: string
     readonly teamId: string
-    readonly secret: ISecret
+    private secret: ISecret
 
     constructor(scope: Construct,  { name, platform, attributes, signingKeyId, signingKeySecretName, appBundleId, teamId }: SNSPlatformApplicationAPNSOptions) {
         super(scope, 'SNSPlatformApplicationAPNS', { name, platform, attributes })
@@ -29,14 +29,16 @@ export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
         this.signingKeySecretName = signingKeySecretName
         this.appBundleId = appBundleId
         this.teamId = teamId
-
-        // Allow the lambda role to access the secret to get credentials for the Platform Application
-        this.secret = Secret.fromSecretNameV2(this, 'Secret', this.signingKeySecretName)
-        this.secret.grantRead(this.role)
     }
 
     resourceType(): string {
         return 'Custom::SNSPlatformApplicationAPNS'
+    }
+
+    override afterRoleCreation(){
+        // Allow the lambda role to access the secret to get credentials for the Platform Application
+        this.secret = Secret.fromSecretNameV2(this, 'Secret', this.signingKeySecretName)
+        this.secret.grantRead(this.role)
     }
 
     buildEventHandlerProperties(): { [key: string]: any } {
