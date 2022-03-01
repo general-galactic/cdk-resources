@@ -1,0 +1,37 @@
+{
+  "name": "@general-galactic/cdk-resources",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/general-galactic/cdk-resources.git"
+  },
+  "author": "General Galactic",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/general-galactic/cdk-resources/issues"
+  },
+  "homepage": "https://github.com/general-galactic/cdk-resources#readme",
+  "devDependencies": {
+    "@types/jest": "^26.0.10",
+    "@types/node": "10.17.27",
+    "aws-cdk": "2.11.0",
+    "jest": "^26.4.2",
+    "ts-jest": "^26.2.0",
+    "ts-node": "^9.0.0",
+    "typescript": "~3.9.7"
+  },
+  "dependencies": {
+    "@types/aws-lambda": "^8.10.92",
+    "aws-cdk-lib": "2.11.0",
+    "aws-lambda": "^1.0.7",
+    "aws-sdk": "^2.1071.0",
+    "constructs": "^10.0.0",
+    "source-map-support": "^0.5.21"
+  }
+}
