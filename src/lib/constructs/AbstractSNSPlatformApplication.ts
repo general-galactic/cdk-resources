@@ -1,72 +1,60 @@
-import { CustomResource, Duration, RemovalPolicy, Stack } from 'aws-cdk-lib'
-import { IRole, ManagedPolicy, PolicyDocument, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam'
+import { Stack, Duration, CustomResource, RemovalPolicy } from 'aws-cdk-lib'
+import { Role, ServicePrincipal, ManagedPolicy, PolicyDocument, PolicyStatement, IRole } from 'aws-cdk-lib/aws-iam'
 import { Runtime } from 'aws-cdk-lib/aws-lambda'
 import { NodejsFunction, SourceMapMode } from 'aws-cdk-lib/aws-lambda-nodejs'
 import { RetentionDays } from 'aws-cdk-lib/aws-logs'
+import { Provider } from 'aws-cdk-lib/custom-resources'
 import { Construct } from 'constructs'
 import { join } from 'path'
-import { Provider } from 'aws-cdk-lib/custom-resources'
-import { ISecret, Secret } from 'aws-cdk-lib/aws-secretsmanager'
 
+export type PlatformTypes = 'APNS' | 'APNS_SANDBOX'
 
-type PlatformTypes = 'ADM' | 'APNS' | 'APNS_SANDBOX' | 'GCM'
-
-export type SNSPlatformApplicationOptions = {
-    platform: PlatformTypes
-    secretName: string
+export type AbstractSNSPlatformApplicationOptions = {
+    name: string,
+    platform: PlatformTypes,
     attributes?: { [key: string]: string }
 }
 
-export class SNSPlatformApplication extends Construct {
+export abstract class AbstractSNSPlatformApplication extends Construct {
 
-    readonly name: string
-    readonly platform: PlatformTypes
-    readonly attributes?: { [key: string]: string }
-    readonly secretName: string
+    protected name: string
+    protected platform: PlatformTypes
+    protected attributes?: { [key: string]: string }
 
-    readonly provider: Provider
-    readonly resource: CustomResource
-    readonly secret: ISecret
-    readonly role: IRole
+    protected provider: Provider
+    protected resource: CustomResource
+    protected role: IRole
+    protected onEventHandler: NodejsFunction
 
-    constructor(scope: Construct, name: string, { platform, attributes, secretName }: SNSPlatformApplicationOptions) {
-        super(scope, 'SNSPlatformApplication')
+    
+    constructor(scope: Construct, id: string, options: AbstractSNSPlatformApplicationOptions ){
+        super(scope, id)
 
-        this.name = name
-        this.platform = platform
-        this.attributes = attributes
-        this.secretName = secretName
+        this.name = options.name
+        this.platform = options.platform
+        this.attributes = options.attributes
 
         this.role = this.setupRole()
-
-        const onEventHandler = this.setupEventHandler(this.role)
+        this.onEventHandler = this.setupEventHandler(this.role)
 
         this.provider = new Provider(this, 'Provider', {
-            onEventHandler,
+            onEventHandler: this.onEventHandler,
             logRetention: RetentionDays.ONE_DAY
         })
 
-
-        // Allow the lambda role to access the secret to get credentials for the Platform Application
-        this.secret = Secret.fromSecretNameV2(this, 'Secret', this.secretName)
-        this.secret.grantRead(this.role)
-        
         this.resource = new CustomResource(this, 'Resource', {
-            serviceToken: this.provider.serviceToken,
-            properties: {
-                name: this.name,
-                platform: this.platform,
-                attributes: this.attributes,
-                region: Stack.of(this).region,
-                account: Stack.of(this).account,
-                secretName: this.secretName
-            },
-            removalPolicy: RemovalPolicy.DESTROY,
-            resourceType: 'Custom::GG-SNSPlatformApplication'
+             serviceToken: this.provider.serviceToken,
+             properties: this.buildEventHandlerProperties(),
+             removalPolicy: RemovalPolicy.DESTROY,
+             resourceType: this.resourceType()
         })
     }
 
-    private setupRole(): Role {
+    abstract resourceType(): string
+
+    abstract buildEventHandlerProperties(): { [key: string]: string }
+
+    protected setupRole(): Role {
         return new Role(this, `Role`, {
             assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
             managedPolicies: [
@@ -89,12 +77,12 @@ export class SNSPlatformApplication extends Construct {
                     ]
                 })
             },
-            description: 'Used to execute the @general-galactic/cdk-resources -> SNSPlatformApplicationCustomResourceEventHandler lamda'
+            description: `Used to execute the @general-galactic/cdk-resources -> ${this.node.id} lamda`
         })
     }
 
-    private setupEventHandler(role: IRole): NodejsFunction {
-        return new NodejsFunction(this, `ManageSNSPlatformApplicationCustomResourceEventHandler`, {
+    protected setupEventHandler(role: IRole): NodejsFunction {
+        return new NodejsFunction(this, 'EventHandler', {
             runtime: Runtime.NODEJS_14_X,
             memorySize: 1024,
             timeout: Duration.minutes(5),

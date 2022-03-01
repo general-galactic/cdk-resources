@@ -31,3 +31,7 @@ This Resource will create several entities in AWS:
 - **SNS Platform Application**: The Platform Application you wanted to create.
 
 Do not delete or edit any of these resources outside of your CDK stack or you will cause yourself headaches.
+
+### Outputs
+
+- **PlatformApplicationArn** - The ARN of the managed SNS Platform Application
