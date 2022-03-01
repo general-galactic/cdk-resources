@@ -29,16 +29,14 @@ export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
         this.signingKeySecretName = signingKeySecretName
         this.appBundleId = appBundleId
         this.teamId = teamId
+
+        // Allow the lambda role to access the secret to get credentials for the Platform Application
+        this.secret = Secret.fromSecretNameV2(this, 'Secret', this.signingKeySecretName)
+        this.secret.grantRead(this.role)
     }
 
     resourceType(): string {
         return 'Custom::SNSPlatformApplicationAPNS'
-    }
-
-    override afterRoleCreation(){
-        // Allow the lambda role to access the secret to get credentials for the Platform Application
-        this.secret = Secret.fromSecretNameV2(this, 'Secret', this.signingKeySecretName)
-        this.secret.grantRead(this.role)
     }
 
     buildEventHandlerProperties(): { [key: string]: any } {
