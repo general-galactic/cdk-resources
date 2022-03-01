@@ -1,59 +1,71 @@
 import { SNSClient, CreatePlatformApplicationCommand, DeletePlatformApplicationCommand, paginateListPlatformApplications, PlatformApplication, SetPlatformApplicationAttributesCommand } from '@aws-sdk/client-sns'
+import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager'
 import { CdkCustomResourceEvent, CdkCustomResourceResponse } from 'aws-lambda'
 
 
 type SNSPlatformApplicationPlatforms = 'ADM' | 'APNS' | 'APNS_SANDBOX' | 'GCM'
 
-type APNSOptions = {
-    signingKey: string, // PlatformCredential: string
-    signingKeyId: string, // PlatformPrincipal: string
-    appBundleId: string, // ApplePlatformBundleID
-    teamId: string // ApplePlatformTeamID
+type APNSSecret = {
+    signingKey: string
+    signingKeyId: string
+    appBundleId: string
+    teamId: string
 }
 
 export type SNSPlatformApplicationCustomResourceHandlerOptions = {
-    client: SNSClient
+    snsClient: SNSClient,
+    secretsClient: SecretsManagerClient
     name: string
     platform: SNSPlatformApplicationPlatforms
     attributes?: { [key: string]: string }
     debug?: boolean
-    apns?: APNSOptions
+    secretName: string
 }
 
 export class SNSPlatformApplicationCustomResourceHandler {
 
-    private client: SNSClient
+    private snsClient: SNSClient
+    private secretsClient: SecretsManagerClient
     private name: string
     private platform: SNSPlatformApplicationPlatforms
     private attributes?: { [key: string]: string }
     private debug: boolean
-    private apns?: APNSOptions
-    private firebase?: APNSOptions
+    private secretName: string
 
     constructor(options: SNSPlatformApplicationCustomResourceHandlerOptions){
-        this.client = options.client
+        this.snsClient = options.snsClient
+        this.secretsClient = options.secretsClient
         this.name = options.name
         this.platform = options.platform
         this.attributes = options.attributes
         this.debug = options.debug ?? false
-        this.apns = options.apns
+        this.secretName = options.secretName
     }
 
-    private buildAttributes(): { [key: string]: string } {
-        if(this.platform === 'APNS' || this.platform === 'APNS_SANDBOX'){
-            if(!this.apns){
-                throw new Error('You must provide apns options if using an APNS platform')
-            }
-        }
+    private async fetchSecret(): Promise<string | undefined> {
+        const command = new GetSecretValueCommand({ SecretId: this.secretName })
+        const result = await this.secretsClient.send(command)
+        return result.SecretString
+    }
 
+    private async buildAttributes(): Promise<{ [key: string]: string }> {
+        const secret = await this.fetchSecret()
+        if(!secret) throw new Error(`Unable to get secret value. Make sure you manually created this secret with the correct format: ${this.secretName}`)
+        
         const attributes = this.attributes ?? {}
-        if(this.apns){
-            attributes['PlatformCredential'] = this.apns.signingKey
-            attributes['PlatformPrincipal'] = this.apns.signingKeyId
-            attributes['ApplePlatformBundleID'] = this.apns.appBundleId
-            attributes['ApplePlatformTeamID'] = this.apns.teamId
-        }else if(this.firebase){
-            // TODO: firebase
+        if(this.platform === 'APNS' || this.platform === 'APNS_SANDBOX'){
+            const apnsSecret = JSON.parse(secret) as APNSSecret
+
+            if(!apnsSecret.signingKey) throw new Error(`The SNS Platform Application Resource requires the secret named '${this.secretName}' to have a 'signingKey' value that is contents of the token downloaded from the Apple Developer portal.`)
+            if(!apnsSecret.signingKeyId) throw new Error(`The SNS Platform Application Resource requires the secret named '${this.secretName}' to have a 'signingKeyId' value found in the Apple Developer portal.`)
+            if(!apnsSecret.appBundleId) throw new Error(`The SNS Platform Application Resource requires the secret named '${this.secretName}' to have a 'appBundleId' value from your iOS app.`)
+            if(!apnsSecret.teamId) throw new Error(`The SNS Platform Application Resource requires the secret named '${this.secretName}' to have a 'teamId' value from the Apple Developer portal.`)
+
+            attributes['PlatformCredential'] = apnsSecret.signingKey
+            attributes['PlatformPrincipal'] = apnsSecret.signingKeyId
+            attributes['ApplePlatformBundleID'] = apnsSecret.appBundleId
+            attributes['ApplePlatformTeamID'] = apnsSecret.teamId
+
         }
 
         if(this.debug) console.log(`PLATFORM APPLICATION ATTRIBUTES: `, attributes)
@@ -76,10 +88,10 @@ export class SNSPlatformApplicationCustomResourceHandler {
         const command = new CreatePlatformApplicationCommand({
             Name: this.name,
             Platform: this.platform,
-            Attributes: this.buildAttributes()
+            Attributes: await this.buildAttributes()
         })
         console.log('CREATING PLATFORM APPLICATION - COMMAND: ', command)
-        const result = await this.client.send(command)
+        const result = await this.snsClient.send(command)
 
         return this.buildResponse(`Custom::GG-SNSPlatformApplication:${this.name}:${this.platform}`, { PlatformApplicationArn: result.PlatformApplicationArn! })
     }
@@ -90,10 +102,10 @@ export class SNSPlatformApplicationCustomResourceHandler {
 
         const command = new SetPlatformApplicationAttributesCommand({
             PlatformApplicationArn: platformApplication.PlatformApplicationArn,
-            Attributes: this.buildAttributes()
+            Attributes: await this.buildAttributes()
         })
 
-        await this.client.send(command)
+        await this.snsClient.send(command)
         
         console.log('UPDATED', platformApplication.PlatformApplicationArn)
 
@@ -108,7 +120,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
             PlatformApplicationArn: platformApplication.PlatformApplicationArn
         })
 
-        await this.client.send(command)
+        await this.snsClient.send(command)
 
         console.log('DELETED', platformApplication.PlatformApplicationArn)
 
@@ -124,7 +136,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
 
     private async findPlatformApplicationByNameAndPlatform(name: string, platform: SNSPlatformApplicationPlatforms): Promise<PlatformApplication> {  
         console.log('FINDING PLATFORM APP: ', name, platform)      
-        const paginator = paginateListPlatformApplications({ client: this.client }, {})
+        const paginator = paginateListPlatformApplications({ client: this.snsClient }, {})
 
         let foundPlatformApplication: PlatformApplication | undefined
 

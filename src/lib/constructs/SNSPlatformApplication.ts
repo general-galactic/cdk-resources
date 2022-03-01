@@ -1,27 +1,20 @@
 import { CustomResource, Duration, RemovalPolicy, Stack } from 'aws-cdk-lib'
-import { ManagedPolicy, PolicyDocument, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam'
+import { IRole, ManagedPolicy, PolicyDocument, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam'
 import { Runtime } from 'aws-cdk-lib/aws-lambda'
 import { NodejsFunction, SourceMapMode } from 'aws-cdk-lib/aws-lambda-nodejs'
 import { RetentionDays } from 'aws-cdk-lib/aws-logs'
 import { Construct } from 'constructs'
 import { join } from 'path'
 import { Provider } from 'aws-cdk-lib/custom-resources'
+import { ISecret, Secret } from 'aws-cdk-lib/aws-secretsmanager'
 
 
 type PlatformTypes = 'ADM' | 'APNS' | 'APNS_SANDBOX' | 'GCM'
 
-
-export type APNSOptions = {
-    signingKey: string,
-    signingKeyId: string,
-    appBundleId: string,
-    teamId: string
-}
-
 export type SNSPlatformApplicationOptions = {
-    platform: PlatformTypes,
-    attributes?: { [key: string]: string },
-    apns?: APNSOptions
+    platform: PlatformTypes
+    secretName: string
+    attributes?: { [key: string]: string }
 }
 
 export class SNSPlatformApplication extends Construct {
@@ -29,48 +22,45 @@ export class SNSPlatformApplication extends Construct {
     readonly name: string
     readonly platform: PlatformTypes
     readonly attributes?: { [key: string]: string }
-    readonly apns?: APNSOptions
+    readonly secretName: string
 
     readonly provider: Provider
     readonly resource: CustomResource
+    readonly secret: ISecret
+    readonly role: IRole
 
-    constructor(scope: Construct, name: string, { platform, attributes, apns }: SNSPlatformApplicationOptions) {
+    constructor(scope: Construct, name: string, { platform, attributes, secretName }: SNSPlatformApplicationOptions) {
         super(scope, 'SNSPlatformApplication')
 
         this.name = name
         this.platform = platform
         this.attributes = attributes
-        this.apns = apns
+        this.secretName = secretName
 
-        const role = this.setupRole()
+        this.role = this.setupRole()
 
-        const onEventHandler = this.setupEventHandler(role)
+        const onEventHandler = this.setupEventHandler(this.role)
 
         this.provider = new Provider(this, 'Provider', {
             onEventHandler,
             logRetention: RetentionDays.ONE_DAY
         })
 
-        const properties: { [key: string]: any } = {
-            name: this.name,
-            platform: this.platform,
-            attributes: this.attributes,
-            region: Stack.of(this).region,
-            account: Stack.of(this).account
-        }
 
-        if(this.apns){
-            properties.signingKey = this.apns.signingKey,
-            properties.signingKeyId = this.apns.signingKeyId,
-            properties.appBundleId = this.apns.appBundleId,
-            properties.teamId = this.apns.teamId
-        }
-
-        // TODO: google
-
+        // Allow the lambda role to access the secret to get credentials for the Platform Application
+        this.secret = Secret.fromSecretNameV2(this, 'Secret', this.secretName)
+        this.secret.grantRead(this.role)
+        
         this.resource = new CustomResource(this, 'Resource', {
             serviceToken: this.provider.serviceToken,
-            properties,
+            properties: {
+                name: this.name,
+                platform: this.platform,
+                attributes: this.attributes,
+                region: Stack.of(this).region,
+                account: Stack.of(this).account,
+                secretName: this.secretName
+            },
             removalPolicy: RemovalPolicy.DESTROY,
             resourceType: 'Custom::GG-SNSPlatformApplication'
         })
@@ -103,7 +93,7 @@ export class SNSPlatformApplication extends Construct {
         })
     }
 
-    private setupEventHandler(role: Role): NodejsFunction {
+    private setupEventHandler(role: IRole): NodejsFunction {
         return new NodejsFunction(this, `ManageSNSPlatformApplicationCustomResourceEventHandler`, {
             runtime: Runtime.NODEJS_14_X,
             memorySize: 1024,
