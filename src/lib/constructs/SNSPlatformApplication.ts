@@ -56,7 +56,7 @@ export class SNSPlatformApplication extends Construct {
 
     private setupRole(): Role {
         return new Role(this, `Role`, {
-            assumedBy: new ServicePrincipal('sns.amazonaws.com'),
+            assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
             managedPolicies: [
                 ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole')
             ],
