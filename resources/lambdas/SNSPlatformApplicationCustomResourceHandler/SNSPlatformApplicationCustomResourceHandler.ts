@@ -43,8 +43,9 @@ export class SNSPlatformApplicationCustomResourceHandler {
         const command = new CreatePlatformApplicationCommand({
             Name: this.name,
             Platform: this.platform,
-            Attributes: this.attributes
+            Attributes: this.attributes ?? {}
         })
+        console.log('CREATING PLATFORM APPLICATION: ', this.name, this.platform, command)
         const result = await this.client.send(command)
 
         return this.buildResponse(`Custom::GG-SNSPlatformApplication:${this.name}:${this.platform}`, { PlatformApplicationArn: result.PlatformApplicationArn! })
@@ -56,7 +57,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
 
         const command = new SetPlatformApplicationAttributesCommand({
             PlatformApplicationArn: platformApplication.PlatformApplicationArn,
-            Attributes: this.attributes
+            Attributes: this.attributes ?? {}
         })
 
         await this.client.send(command)

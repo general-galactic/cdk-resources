@@ -104,4 +104,8 @@ export class SNSPlatformApplication extends Construct {
         })
     }
 
+    get PlatformApplicationArn(): string | undefined {
+        return this.resource?.getAttString('PlatformApplicationArn')
+    }
+
 }
