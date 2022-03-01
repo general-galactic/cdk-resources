@@ -7,7 +7,6 @@ import { Construct } from 'constructs'
 import { join } from 'path'
 import { Provider } from 'aws-cdk-lib/custom-resources'
 
-const LAMBDA_SERVICE_PRINCIPAL = new ServicePrincipal('lambda.amazonaws.com')
 
 /**
  * This is a custom CDK resource to be used in place of IotPolicy. IotPolicy doesn't support
@@ -52,7 +51,7 @@ export class IoTCorePolicy extends Construct {
 
     private setupRole(policyName: string): Role {
         return new Role(this, `Role`, {
-            assumedBy: LAMBDA_SERVICE_PRINCIPAL,
+            assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
             managedPolicies: [
                 ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole')
             ],
@@ -84,7 +83,7 @@ export class IoTCorePolicy extends Construct {
             runtime: Runtime.NODEJS_14_X,
             memorySize: 1024,
             timeout: Duration.minutes(5),
-            entry: join(__dirname, `../../resources/lambda/IoTCorePolicyVersionEventHandler/index.js`),
+            entry: join(__dirname, `../../resources/lambdas/IoTCorePolicyVersionEventHandler/index.js`),
             handler: 'main',
             bundling: {
               externalModules: ['aws-sdk'],
