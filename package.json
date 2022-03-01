@@ -12,7 +12,7 @@
     "url": "git+https://github.com/general-galactic/cdk-resources.git"
   },
   "author": "General Galactic",
-  "license": "MIT",
+  "license": "Apache2",
   "bugs": {
     "url": "https://github.com/general-galactic/cdk-resources/issues"
   },
