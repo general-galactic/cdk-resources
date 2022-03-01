@@ -45,7 +45,7 @@ export class IoTCorePolicy extends Construct {
                 account: Stack.of(this).account
             },
             removalPolicy: RemovalPolicy.DESTROY,
-            resourceType: 'GG::IoTCorePolicy'
+            resourceType: 'Custom::GG-IoTCorePolicy'
         })
     }
 
