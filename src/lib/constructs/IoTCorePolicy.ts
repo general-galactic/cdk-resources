@@ -101,4 +101,16 @@ export class IoTCorePolicy extends Construct {
         })
     }
 
+    get deletedPolicyVersion(): string | undefined {
+        return this.resource?.getAttString('deletedVersion')
+    }
+
+    get createdPolicyVersion(): string | undefined {
+        return this.resource?.getAttString('createdVersion')
+    }
+
+    get policyArn(): string | undefined {
+        return this.resource?.getAttString('policyArn')
+    }
+
 }

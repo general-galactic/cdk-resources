@@ -31,7 +31,7 @@ export class IotCorePolicyCustomResourceHandler {
     async onCreate(): Promise<CdkCustomResourceResponse> {
         const policy = await this.createPolicy()
         if(!policy) throw new Error(`Unable to create policy.`)
-        return this.buildResponse(`Custom::VersionedIoTPolicy:${this.policyName}`, { deletedVersion: '', createdVersion: '1' }) // create events need to create physical ids, other events are passed the PhysicalResourceId
+        return this.buildResponse(`Custom::VersionedIoTPolicy:${this.policyName}`, { deletedVersion: '', createdVersion: '1', policyArn: policy.policyArn }) // create events need to create physical ids, other events are passed the PhysicalResourceId
     }
 
     async onUpdate(physicalResourceId: string): Promise<CdkCustomResourceResponse> {
@@ -42,7 +42,7 @@ export class IotCorePolicyCustomResourceHandler {
 
         const newVersion = await this.createPolicyVersion()
 
-        return this.buildResponse(physicalResourceId, { deletedVersion: deletedVersion ?? '', createdVersion: newVersion?.policyVersionId ?? '' })
+        return this.buildResponse(physicalResourceId, { deletedVersion: deletedVersion ?? '', createdVersion: newVersion?.policyVersionId ?? '', policyArn: newVersion?.policyArn ?? '' })
     }
 
     async onDelete(physicalResourceId: string): Promise<CdkCustomResourceResponse> {
@@ -53,10 +53,10 @@ export class IotCorePolicyCustomResourceHandler {
             }
         }
         await this.deletePolicy()
-        return this.buildResponse(physicalResourceId, { deletedVersion: '*', createdVersion: '' })
+        return this.buildResponse(physicalResourceId, { deletedVersion: '*', createdVersion: '', policyArn: '' })
     }
 
-    buildResponse(physicalResourceId: string, data?: { deletedVersion: string, createdVersion: string }): CdkCustomResourceResponse {
+    buildResponse(physicalResourceId: string, data?: { deletedVersion: string, createdVersion: string, policyArn: string }): CdkCustomResourceResponse {
         return {
             PhysicalResourceId: physicalResourceId,
             Data: data
