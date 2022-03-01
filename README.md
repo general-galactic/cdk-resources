@@ -8,7 +8,7 @@ This resource can be used to create an SNS Mobile Platform Application to allow 
 resource you must first log into the Apple Developer portal and generate a new APNs key. You then need to store the key itself and a few other values
 into AWS Secrets Manager:
 
-- **signingKey**: The contents of the downloaded APNs key
+- **signingKey**: The contents of the downloaded APNs key ( NOTE: Secrets Manager will munge the new lines and the new lines must be preserved. Enter this value in plain text mode. )
 - **signingKeyId**: The signing key ID displayed in the Apple Delveloper Portal
 - **appBundleId**: The bundle Id of your iOS app
 - **teamId**: The Team ID found in the Apple Developer Portal under 'Membership'
@@ -23,3 +23,11 @@ const apnsPlatformApplication = new SNSPlatformApplication(this, '[provide name 
 })
 ```
 
+This Resource will create several entities in AWS:
+
+- **Event Handler Lambda**: This lambda is used by the resource to perform the actual work of creating, updating, and deleting the platform application.
+- **Cloudwatch Log Groups**: You'll see log groups created for the event handler lambda and the custom resource itself. These logs can assist in troubleshooting.
+- **IAM Role**: You'll find an IAM role used to execute the Event Handler Lambda. This role will have permissions to execute the lambda, access the secret in Secrets Manager, and manage SNS Platform Applications.
+- **SNS Platform Application**: The Platform Application you wanted to create.
+
+Do not delete or edit any of these resources outside of your CDK stack or you will cause yourself headaches.
