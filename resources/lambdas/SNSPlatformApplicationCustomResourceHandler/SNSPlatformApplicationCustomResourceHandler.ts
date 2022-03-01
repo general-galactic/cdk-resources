@@ -60,12 +60,13 @@ export class SNSPlatformApplicationCustomResourceHandler {
             if(!apnsSecret.signingKeyId) throw new Error(`The SNS Platform Application Resource requires the secret named '${this.secretName}' to have a 'signingKeyId' value found in the Apple Developer portal.`)
             if(!apnsSecret.appBundleId) throw new Error(`The SNS Platform Application Resource requires the secret named '${this.secretName}' to have a 'appBundleId' value from your iOS app.`)
             if(!apnsSecret.teamId) throw new Error(`The SNS Platform Application Resource requires the secret named '${this.secretName}' to have a 'teamId' value from the Apple Developer portal.`)
+            
+            console.log('RETRIEVED AND VALIDATED APNS SECRET', apnsSecret)
 
             attributes['PlatformCredential'] = apnsSecret.signingKey
             attributes['PlatformPrincipal'] = apnsSecret.signingKeyId
             attributes['ApplePlatformBundleID'] = apnsSecret.appBundleId
             attributes['ApplePlatformTeamID'] = apnsSecret.teamId
-
         }
 
         if(this.debug) console.log(`PLATFORM APPLICATION ATTRIBUTES: `, attributes)
