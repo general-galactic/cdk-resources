@@ -1,8 +1,15 @@
 import { SNSClient, CreatePlatformApplicationCommand, DeletePlatformApplicationCommand, paginateListPlatformApplications, PlatformApplication, SetPlatformApplicationAttributesCommand } from '@aws-sdk/client-sns'
-import { CdkCustomResourceEvent, CdkCustomResourceResponse } from "aws-lambda"
+import { CdkCustomResourceEvent, CdkCustomResourceResponse } from 'aws-lambda'
 
 
-export type SNSPlatformApplicationPlatforms = 'ADM' | 'APNS' | 'APNS_SANDBOX' | 'GCM'
+type SNSPlatformApplicationPlatforms = 'ADM' | 'APNS' | 'APNS_SANDBOX' | 'GCM'
+
+type APNSOptions = {
+    signingKey: string, // PlatformCredential: string
+    signingKeyId: string, // PlatformPrincipal: string
+    appBundleId: string, // ApplePlatformBundleID
+    teamId: string // ApplePlatformTeamID
+}
 
 export type SNSPlatformApplicationCustomResourceHandlerOptions = {
     client: SNSClient
@@ -10,6 +17,7 @@ export type SNSPlatformApplicationCustomResourceHandlerOptions = {
     platform: SNSPlatformApplicationPlatforms
     attributes?: { [key: string]: string }
     debug?: boolean
+    apns?: APNSOptions
 }
 
 export class SNSPlatformApplicationCustomResourceHandler {
@@ -19,6 +27,8 @@ export class SNSPlatformApplicationCustomResourceHandler {
     private platform: SNSPlatformApplicationPlatforms
     private attributes?: { [key: string]: string }
     private debug: boolean
+    private apns?: APNSOptions
+    private firebase?: APNSOptions
 
     constructor(options: SNSPlatformApplicationCustomResourceHandlerOptions){
         this.client = options.client
@@ -26,6 +36,27 @@ export class SNSPlatformApplicationCustomResourceHandler {
         this.platform = options.platform
         this.attributes = options.attributes
         this.debug = options.debug ?? false
+    }
+
+    private buildAttributes(): { [key: string]: string } {
+        if(this.platform === 'APNS' || this.platform === 'APNS_SANDBOX'){
+            if(!this.apns){
+                throw new Error('You must provide apns options if using an APNS platform')
+            }
+        }
+
+        const attributes = this.attributes ?? {}
+        if(this.apns){
+            attributes['PlatformCredential'] = this.apns.signingKey
+            attributes['PlatformPrincipal'] = this.apns.signingKeyId
+            attributes['ApplePlatformBundleID'] = this.apns.appBundleId
+            attributes['ApplePlatformTeamID'] = this.apns.teamId
+        }else if(this.firebase){
+            // TODO: firebase
+        }
+
+        if(this.debug) console.log(`PLATFORM APPLICATION ATTRIBUTES: `, attributes)
+        return attributes
     }
 
     async handleEvent(event: CdkCustomResourceEvent): Promise<CdkCustomResourceResponse>{
@@ -40,12 +71,13 @@ export class SNSPlatformApplicationCustomResourceHandler {
     }
 
     async onCreate(): Promise<CdkCustomResourceResponse> {
+        console.log('CREATING PLATFORM APPLICATION: ', this.name, this.platform)
         const command = new CreatePlatformApplicationCommand({
             Name: this.name,
             Platform: this.platform,
-            Attributes: this.attributes ?? {}
+            Attributes: this.buildAttributes()
         })
-        console.log('CREATING PLATFORM APPLICATION: ', this.name, this.platform, command)
+        console.log('CREATING PLATFORM APPLICATION - COMMAND: ', command)
         const result = await this.client.send(command)
 
         return this.buildResponse(`Custom::GG-SNSPlatformApplication:${this.name}:${this.platform}`, { PlatformApplicationArn: result.PlatformApplicationArn! })
@@ -57,7 +89,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
 
         const command = new SetPlatformApplicationAttributesCommand({
             PlatformApplicationArn: platformApplication.PlatformApplicationArn,
-            Attributes: this.attributes ?? {}
+            Attributes: this.buildAttributes()
         })
 
         await this.client.send(command)

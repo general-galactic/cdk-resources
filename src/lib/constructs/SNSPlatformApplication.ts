@@ -10,10 +10,18 @@ import { Provider } from 'aws-cdk-lib/custom-resources'
 
 type PlatformTypes = 'ADM' | 'APNS' | 'APNS_SANDBOX' | 'GCM'
 
+
+export type APNSOptions = {
+    signingKey: string,
+    signingKeyId: string,
+    appBundleId: string,
+    teamId: string
+}
+
 export type SNSPlatformApplicationOptions = {
-    name: string
-    platform: PlatformTypes
-    attributes?: { [key: string]: string }
+    platform: PlatformTypes,
+    attributes?: { [key: string]: string },
+    apns?: APNSOptions
 }
 
 export class SNSPlatformApplication extends Construct {
@@ -21,15 +29,18 @@ export class SNSPlatformApplication extends Construct {
     readonly name: string
     readonly platform: PlatformTypes
     readonly attributes?: { [key: string]: string }
+    readonly apns?: APNSOptions
+
     readonly provider: Provider
     readonly resource: CustomResource
 
-    constructor(scope: Construct, name: string, platform: PlatformTypes, attributes?: { [key: string]: string }) {
+    constructor(scope: Construct, name: string, { platform, attributes, apns }: SNSPlatformApplicationOptions) {
         super(scope, 'SNSPlatformApplication')
 
         this.name = name
         this.platform = platform
         this.attributes = attributes
+        this.apns = apns
 
         const role = this.setupRole()
 
@@ -40,15 +51,26 @@ export class SNSPlatformApplication extends Construct {
             logRetention: RetentionDays.ONE_DAY
         })
 
+        const properties: { [key: string]: any } = {
+            name: this.name,
+            platform: this.platform,
+            attributes: this.attributes,
+            region: Stack.of(this).region,
+            account: Stack.of(this).account
+        }
+
+        if(this.apns){
+            properties.signingKey = this.apns.signingKey,
+            properties.signingKeyId = this.apns.signingKeyId,
+            properties.appBundleId = this.apns.appBundleId,
+            properties.teamId = this.apns.teamId
+        }
+
+        // TODO: google
+
         this.resource = new CustomResource(this, 'Resource', {
             serviceToken: this.provider.serviceToken,
-            properties: {
-                name: this.name,
-                platform: this.platform,
-                attributes: this.attributes,
-                region: Stack.of(this).region,
-                account: Stack.of(this).account
-            },
+            properties,
             removalPolicy: RemovalPolicy.DESTROY,
             resourceType: 'Custom::GG-SNSPlatformApplication'
         })

@@ -14,12 +14,29 @@ export async function main(event: CdkCustomResourceEvent, _context: Context): Pr
         }
     })
 
+    const platform = event.ResourceProperties.platform
+
+    const apns = !isAPNS(platform) ? undefined : {
+        signingKey: event.ResourceProperties.signingKey,
+        signingKeyId: event.ResourceProperties.signingKeyId,
+        appBundleId: event.ResourceProperties.appBundleId,
+        teamId: event.ResourceProperties.teamId
+    }
+
+    // TODO: firebase
+
     const handler = new SNSPlatformApplicationCustomResourceHandler({
         client,
         name: event.ResourceProperties.name,
-        platform: event.ResourceProperties.platform,
-        attributes: event.ResourceProperties.attributes
+        platform,
+        apns,
+        attributes: event.ResourceProperties.attributes, // for passing attributes this resouce doesn't handle
+        debug: event.ResourceProperties.debug === 'enabled'
     })
 
     return await handler.handleEvent(event)
+}
+
+function isAPNS(platform: string){
+    return platform === 'APNS' || platform === 'APNS_SANDBOX'
 }

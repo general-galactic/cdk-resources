@@ -14,7 +14,7 @@ export async function main(event: CdkCustomResourceEvent, _context: Context): Pr
         }
     })
 
-    const handler = new IotCorePolicyCustomResourceHandler(client, event.ResourceProperties.policyName, event.ResourceProperties.policyDocument)
+    const handler = new IotCorePolicyCustomResourceHandler(client, event.ResourceProperties.policyName, event.ResourceProperties.policyDocument, event.ResourceProperties.debug === 'enabled' )
 
     return await handler.handleEvent(event)
 }
