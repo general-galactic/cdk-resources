@@ -83,7 +83,7 @@ export class IoTCorePolicy extends Construct {
             runtime: Runtime.NODEJS_14_X,
             memorySize: 1024,
             timeout: Duration.minutes(5),
-            entry: join(__dirname, `../../resources/lambdas/IoTCorePolicyVersionEventHandler/index.js`),
+            entry: join(__dirname, `../../../resources/lambdas/IoTCorePolicyVersionEventHandler/index.js`),
             handler: 'main',
             bundling: {
               externalModules: ['aws-sdk'],
