@@ -9,12 +9,12 @@ import { Provider } from 'aws-cdk-lib/custom-resources'
 
 
 /**
- * This is a custom CDK resource to be used in place of IotPolicy. IotPolicy doesn't support
+ * This is a custom CDK resource to be used in place of IotPolicy. The CDK's IotPolicy doesn't support
  * policy versions and will just replace the policy or error: (https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/469).
  * 
  * This custom resource allows creating a policy from scratch, incrementing policy version on updates, deleting old policy versions
  * once there are more than 5, and deleting the policy versions when tearing down a stack.
- * 
+
  */
 export class IoTCorePolicy extends Construct {
 
@@ -22,7 +22,7 @@ export class IoTCorePolicy extends Construct {
     readonly provider: Provider
     readonly resource: CustomResource
 
-    constructor(scope: Construct, policyName: string, policyDocument: PolicyDocument) {
+    constructor(scope: Construct, policyName: string, policyDocument: string) {
         super(scope, 'IoTCorePolicy')
 
         this.policyName = policyName
@@ -54,7 +54,7 @@ export class IoTCorePolicy extends Construct {
             serviceToken: this.provider.serviceToken,
             properties: {
                 policyName,
-                policyDocument: JSON.stringify(policyDocument.toJSON()),
+                policyDocument,
                 region: Stack.of(this).region,
                 account: Stack.of(this).account
             },

@@ -19,7 +19,7 @@ export class IoTCorePolicyExampleStack extends Stack {
         ]
       }))
   
-      const iotPolicy = new IoTCorePolicy(this, 'testPolicy', policy)
+      const iotPolicy = new IoTCorePolicy(this, 'testPolicy', JSON.stringify(policy.toJSON()))
 
       new CfnOutput(this, 'createdPolicyVersion', { value: iotPolicy.createdPolicyVersion ?? '' })
       new CfnOutput(this, 'deletedPolicyVersion', { value: iotPolicy.deletedPolicyVersion ?? '' })
