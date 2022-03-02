@@ -13,7 +13,6 @@ export type AbstractSNSPlatformApplicationOptions = {
     name: string,
     platform: PlatformTypes,
     attributes?: { [key: string]: string }
-    roleModifier?: (role: IRole) => void
 }
 
 export abstract class AbstractSNSPlatformApplication extends Construct {
@@ -27,33 +26,28 @@ export abstract class AbstractSNSPlatformApplication extends Construct {
     protected role: IRole
     protected onEventHandler: NodejsFunction
 
-    
     constructor(scope: Construct, id: string, options: AbstractSNSPlatformApplicationOptions ){
         super(scope, id)
-
         this.name = options.name
         this.platform = options.platform
         this.attributes = options.attributes
-
-        this.role = this.setupRole()
-        this.onEventHandler = this.setupEventHandler(this.role)
-
-        this.provider = new Provider(this, 'Provider', {
-            onEventHandler: this.onEventHandler,
-            logRetention: RetentionDays.ONE_DAY
-        })
-
-        this.resource = new CustomResource(this, 'Resource', {
-             serviceToken: this.provider.serviceToken,
-             properties: this.buildEventHandlerProperties(),
-             removalPolicy: RemovalPolicy.DESTROY,
-             resourceType: this.resourceType()
-        })
     }
 
-    abstract resourceType(): string
+    protected setupResource(provider: Provider, resourceType: string, properties: { [key: string]: any }): CustomResource {
+        return new CustomResource(this, 'Resource', {
+            serviceToken: provider.serviceToken,
+            properties: properties,
+            removalPolicy: RemovalPolicy.DESTROY,
+            resourceType
+       })
+    }
 
-    abstract buildEventHandlerProperties(): { [key: string]: string }
+    protected setupProvider(onEventHandler: NodejsFunction): Provider {
+        return new Provider(this, 'Provider', {
+            onEventHandler: onEventHandler,
+            logRetention: RetentionDays.ONE_DAY
+        })
+    }
 
     protected setupRole(): IRole {
         return new Role(this, `Role`, {

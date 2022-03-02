@@ -24,20 +24,21 @@ export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
     private secret: ISecret
 
     constructor(scope: Construct,  { name, platform, attributes, signingKeyId, signingKeySecretName, appBundleId, teamId }: SNSPlatformApplicationAPNSOptions) {
-        super(scope, 'SNSPlatformApplicationAPNS', { name, platform, attributes,
-            roleModifier: role => {
-                this.secret = Secret.fromSecretNameV2(this, 'Secret', signingKeySecretName)
-                this.secret.grantRead(role)
-            }
-        })
+        super(scope, 'SNSPlatformApplicationAPNS', { name, platform, attributes })
+
         this.signingKeyId = signingKeyId
         this.signingKeySecretName = signingKeySecretName
         this.appBundleId = appBundleId
         this.teamId = teamId
-    }
 
-    resourceType(): string {
-        return 'Custom::SNSPlatformApplicationAPNS'
+        this.role = this.setupRole()
+
+        this.secret = Secret.fromSecretNameV2(this, 'Secret', this.signingKeySecretName)
+        this.secret.grantRead(this.role)
+
+        this.onEventHandler = this.setupEventHandler(this.role)
+        this.provider = this.setupProvider(this.onEventHandler)
+        this.resource = this.setupResource(this.provider, 'Custom::SNSPlatformApplicationAPNS', this.buildEventHandlerProperties() )
     }
 
     buildEventHandlerProperties(): { [key: string]: any } {
