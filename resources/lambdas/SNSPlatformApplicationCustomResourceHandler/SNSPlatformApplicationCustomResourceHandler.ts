@@ -91,7 +91,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
     }
 
     async onUpdate(physicalResourceId: string): Promise<CdkCustomResourceResponse> {
-        const platformApplication = await this.findPlatformApplicationByNameAndPlatform(this.attributes.name, this.attributes.platform)
+        const platformApplication = await this.findPlatformApplicationByNameAndPlatform(this.attributes.name)
         console.log('FOUND APP - UPDATING', platformApplication.PlatformApplicationArn)
 
         const command = new SetPlatformApplicationAttributesCommand({
@@ -107,7 +107,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
     }
 
     async onDelete(physicalResourceId: string): Promise<CdkCustomResourceResponse> {
-        const platformApplication = await this.findPlatformApplicationByNameAndPlatform(this.attributes.name, this.attributes.platform)
+        const platformApplication = await this.findPlatformApplicationByNameAndPlatform(this.attributes.name)
         console.log('FOUND APP - DELETING', platformApplication.PlatformApplicationArn)
 
         const command = new DeletePlatformApplicationCommand({
@@ -128,8 +128,8 @@ export class SNSPlatformApplicationCustomResourceHandler {
         }
     }
 
-    private async findPlatformApplicationByNameAndPlatform(name: string, platform: SNSPlatformApplicationPlatforms): Promise<PlatformApplication> {  
-        console.log('FINDING PLATFORM APP: ', name, platform)      
+    private async findPlatformApplicationByNameAndPlatform(name: string): Promise<PlatformApplication> {  
+        console.log('FINDING PLATFORM APP: ', name)      
         const paginator = paginateListPlatformApplications({ client: this.snsClient }, {})
 
         let foundPlatformApplication: PlatformApplication | undefined
@@ -138,7 +138,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
             console.log("GOT PAGE OF PLATFORM APPS:", page.PlatformApplications)
             if(page.PlatformApplications){
                 for(const platformApplication of page.PlatformApplications){
-                    if(platformApplication.Attributes && platformApplication.Attributes.Name === name && platformApplication.Attributes.Platform === platform){
+                    if(platformApplication.Attributes && platformApplication.Attributes.Name === name){
                         foundPlatformApplication = platformApplication
                         break
                     }
@@ -147,11 +147,11 @@ export class SNSPlatformApplicationCustomResourceHandler {
         }
 
         if(!foundPlatformApplication){
-            throw new Error(`Platform application not found: ${name} - ${platform}`)
+            throw new Error(`Platform application not found: ${name}`)
         }
 
         if(!foundPlatformApplication.PlatformApplicationArn){
-            throw new Error(`Platform application does not contain its ARN: ${name} - ${platform}`)
+            throw new Error(`Platform application does not contain its ARN: ${name}`)
         }
 
         return foundPlatformApplication
