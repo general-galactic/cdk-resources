@@ -91,7 +91,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
     }
 
     async onUpdate(physicalResourceId: string): Promise<CdkCustomResourceResponse> {
-        const platformApplication = await this.findPlatformApplicationByNameAndPlatform(this.attributes.name)
+        const platformApplication = await this.findPlatformApplicationByName(this.attributes.name)
         console.log('FOUND APP - UPDATING', platformApplication.PlatformApplicationArn)
 
         const command = new SetPlatformApplicationAttributesCommand({
@@ -107,7 +107,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
     }
 
     async onDelete(physicalResourceId: string): Promise<CdkCustomResourceResponse> {
-        const platformApplication = await this.findPlatformApplicationByNameAndPlatform(this.attributes.name)
+        const platformApplication = await this.findPlatformApplicationByName(this.attributes.name)
         console.log('FOUND APP - DELETING', platformApplication.PlatformApplicationArn)
 
         const command = new DeletePlatformApplicationCommand({
@@ -128,7 +128,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
         }
     }
 
-    private async findPlatformApplicationByNameAndPlatform(name: string): Promise<PlatformApplication> {  
+    private async findPlatformApplicationByName(name: string): Promise<PlatformApplication> {  
         console.log('FINDING PLATFORM APP: ', name)      
         const paginator = paginateListPlatformApplications({ client: this.snsClient }, {})
 
@@ -138,7 +138,9 @@ export class SNSPlatformApplicationCustomResourceHandler {
             console.log("GOT PAGE OF PLATFORM APPS:", page.PlatformApplications)
             if(page.PlatformApplications){
                 for(const platformApplication of page.PlatformApplications){
-                    if(platformApplication.Attributes && platformApplication.Attributes.Name === name){
+                    console.log("CHECKING:", platformApplication.PlatformApplicationArn, platformApplication.PlatformApplicationArn?.endsWith(name))
+
+                    if(platformApplication.PlatformApplicationArn?.endsWith(name)){
                         foundPlatformApplication = platformApplication
                         break
                     }

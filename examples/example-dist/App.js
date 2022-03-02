@@ -1,0 +1,14 @@
+#!/usr/bin/env node
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+require("dotenv/config");
+const aws_cdk_lib_1 = require("aws-cdk-lib");
+const SNSPlatformApplicationExampleStack_1 = require("./SNSPlatformApplicationExampleStack");
+const app = new aws_cdk_lib_1.App();
+new SNSPlatformApplicationExampleStack_1.SNSPlatformApplicationExampleStack(app, 'SNSPlatformApplicationExample', {
+    env: {
+        account: process.env.ACCOUNT_ID,
+        region: process.env.REGION
+    }
+});
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiQXBwLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiLi4vQXBwLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7OztBQUNBLHlCQUFzQjtBQUN0Qiw2Q0FBaUM7QUFDakMsNkZBQXlGO0FBRXpGLE1BQU0sR0FBRyxHQUFHLElBQUksaUJBQUcsRUFBRSxDQUFBO0FBRXJCLElBQUksdUVBQWtDLENBQUMsR0FBRyxFQUFFLCtCQUErQixFQUFFO0lBQzNFLEdBQUcsRUFBRTtRQUNILE9BQU8sRUFBRSxPQUFPLENBQUMsR0FBRyxDQUFDLFVBQVU7UUFDL0IsTUFBTSxFQUFFLE9BQU8sQ0FBQyxHQUFHLENBQUMsTUFBTTtLQUMzQjtDQUNGLENBQUMsQ0FBQSIsInNvdXJjZXNDb250ZW50IjpbIiMhL3Vzci9iaW4vZW52IG5vZGVcbmltcG9ydCAnZG90ZW52L2NvbmZpZydcbmltcG9ydCB7IEFwcCB9IGZyb20gJ2F3cy1jZGstbGliJ1xuaW1wb3J0IHsgU05TUGxhdGZvcm1BcHBsaWNhdGlvbkV4YW1wbGVTdGFjayB9IGZyb20gJy4vU05TUGxhdGZvcm1BcHBsaWNhdGlvbkV4YW1wbGVTdGFjaydcblxuY29uc3QgYXBwID0gbmV3IEFwcCgpXG5cbm5ldyBTTlNQbGF0Zm9ybUFwcGxpY2F0aW9uRXhhbXBsZVN0YWNrKGFwcCwgJ1NOU1BsYXRmb3JtQXBwbGljYXRpb25FeGFtcGxlJywge1xuICBlbnY6IHtcbiAgICBhY2NvdW50OiBwcm9jZXNzLmVudi5BQ0NPVU5UX0lELFxuICAgIHJlZ2lvbjogcHJvY2Vzcy5lbnYuUkVHSU9OXG4gIH1cbn0pXG4iXX0=

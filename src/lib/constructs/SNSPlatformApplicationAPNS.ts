@@ -2,6 +2,7 @@ import { Stack } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import { ISecret, Secret } from 'aws-cdk-lib/aws-secretsmanager'
 import { AbstractSNSPlatformApplication, AbstractSNSPlatformApplicationOptions } from './AbstractSNSPlatformApplication'
+import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 
 
 type APNSPlatformTypes = 'APNS' | 'APNS_SANDBOX'
@@ -30,12 +31,25 @@ export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
         this.appBundleId = appBundleId
         this.teamId = teamId
 
-        this.role = this.setupRole()
-
         this.secret = Secret.fromSecretNameV2(this, 'Secret', this.signingKeySecretName)
-        this.secret.grantRead(this.role)
 
         this.onEventHandler = this.setupEventHandler()
+        if(this.onEventHandler.role){
+            this.onEventHandler.role.addToPrincipalPolicy(new PolicyStatement({
+                actions: [
+                    'SNS:CreatePlatformApplication',
+                    'SNS:DeletePlatformApplication',
+                    'SNS:ListPlatformApplications',
+                    'SNS:SetPlatformApplicationAttributes'
+                ],
+                resources: [
+                    `arn:aws:sns:${Stack.of(this).region}:${Stack.of(this).account}:*`
+                ]
+            }))
+
+            this.secret.grantRead(this.onEventHandler.role)
+        }
+
         this.provider = this.setupProvider(this.onEventHandler)
         this.resource = this.setupResource(this.provider, 'Custom::SNSPlatformApplicationAPNS', this.buildEventHandlerProperties() )
     }

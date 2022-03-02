@@ -18,6 +18,8 @@ export async function main(event: CdkCustomResourceEvent, _context: Context): Pr
     const snsClient = new SNSClient(config)
     const secretsClient = new SecretsManagerClient(config)
  
+    console.log('RUNNING', event, _context)
+    
     const handler = new SNSPlatformApplicationCustomResourceHandler({
         snsClient,
         secretsClient

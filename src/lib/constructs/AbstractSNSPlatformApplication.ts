@@ -49,33 +49,6 @@ export abstract class AbstractSNSPlatformApplication extends Construct {
         })
     }
 
-    protected setupRole(): IRole {
-        return new Role(this, `Role`, {
-            assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
-            managedPolicies: [
-                ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole')
-            ],
-            inlinePolicies: {
-                'ManageSNSPlatformApplications': new PolicyDocument({
-                    statements: [
-                        new PolicyStatement({
-                            actions: [
-                                'SNS:CreatePlatformApplication',
-                                'SNS:DeletePlatformApplication',
-                                'SNS:ListPlatformApplications',
-                                'SNS:SetPlatformApplicationAttributes'
-                            ],
-                            resources: [
-                                `arn:aws:sns:${Stack.of(this).region}:${Stack.of(this).account}:*`
-                            ]
-                        })
-                    ]
-                })
-            },
-            description: `Used to execute the @general-galactic/cdk-resources -> ${this.node.id} event handler lamda`
-        })
-    }
-
     protected setupEventHandler(): NodejsFunction {
         return new NodejsFunction(this, 'EventHandler', {
             runtime: Runtime.NODEJS_14_X,
@@ -94,8 +67,7 @@ export abstract class AbstractSNSPlatformApplication extends Construct {
               NODE_OPTIONS: '--enable-source-maps'
             },
             logRetention: RetentionDays.THREE_DAYS,
-            description: 'Used to manage SNS Platform Application updates from CloudFormation / CDK -- created by @general-galactic/cdk-resources',
-            role: this.role
+            description: 'Used to manage SNS Platform Application updates from CloudFormation / CDK -- created by @general-galactic/cdk-resources'
         })
     }
 
