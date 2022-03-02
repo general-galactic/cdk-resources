@@ -22,7 +22,7 @@ export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
     readonly teamId: string
     private secret: ISecret
 
-    constructor(scope: Construct,  { name, platform, attributes, signingKeyId, signingKeySecretName, appBundleId, teamId }: SNSPlatformApplicationAPNSOptions) {
+    constructor(scope: Construct, { name, platform, attributes, signingKeyId, signingKeySecretName, appBundleId, teamId }: SNSPlatformApplicationAPNSOptions) {
         super(scope, 'SNSPlatformApplicationAPNS', { name, platform, attributes })
 
         this.signingKeyId = signingKeyId

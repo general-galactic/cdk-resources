@@ -95,7 +95,8 @@ export abstract class AbstractSNSPlatformApplication extends Construct {
               NODE_OPTIONS: '--enable-source-maps'
             },
             logRetention: RetentionDays.THREE_DAYS,
-            description: 'Used to manage SNS Platform Application updates from CloudFormation / CDK -- created by @general-galactic/cdk-resources'
+            description: 'Used to manage SNS Platform Application updates from CloudFormation / CDK -- created by @general-galactic/cdk-resources',
+            role: this.role
         })
     }
 
