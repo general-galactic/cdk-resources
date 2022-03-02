@@ -60,13 +60,13 @@ export abstract class AbstractSNSPlatformApplication extends Construct {
                     statements: [
                         new PolicyStatement({
                             actions: [
-                                'sns:CreatePlatformApplication',
-                                'sns:DeletePlatformApplication',
-                                'sns:ListPlatformApplications',
-                                'sns:SetPlatformApplicationAttributes'
+                                'SNS:CreatePlatformApplication',
+                                'SNS:DeletePlatformApplication',
+                                'SNS:ListPlatformApplications',
+                                'SNS:SetPlatformApplicationAttributes'
                             ],
                             resources: [
-                                `arn:aws:sns:${Stack.of(this).region}:${Stack.of(this).account}:app/*`
+                                `arn:aws:sns:${Stack.of(this).region}:${Stack.of(this).account}:*`
                             ]
                         })
                     ]
