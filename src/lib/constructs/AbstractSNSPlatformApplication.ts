@@ -45,7 +45,8 @@ export abstract class AbstractSNSPlatformApplication extends Construct {
     protected setupProvider(onEventHandler: NodejsFunction): Provider {
         return new Provider(this, 'Provider', {
             onEventHandler: onEventHandler,
-            logRetention: RetentionDays.ONE_DAY
+            logRetention: RetentionDays.ONE_DAY,
+            role: this.role
         })
     }
 
