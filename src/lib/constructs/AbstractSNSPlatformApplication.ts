@@ -13,6 +13,7 @@ export type AbstractSNSPlatformApplicationOptions = {
     name: string,
     platform: PlatformTypes,
     attributes?: { [key: string]: string }
+    roleModifier?: (role: IRole) => void
 }
 
 export abstract class AbstractSNSPlatformApplication extends Construct {
@@ -54,7 +55,7 @@ export abstract class AbstractSNSPlatformApplication extends Construct {
 
     abstract buildEventHandlerProperties(): { [key: string]: string }
 
-    protected setupRole(): Role {
+    protected setupRole(): IRole {
         return new Role(this, `Role`, {
             assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
             managedPolicies: [

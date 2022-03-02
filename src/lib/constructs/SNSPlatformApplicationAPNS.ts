@@ -2,6 +2,7 @@ import { Stack } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import { ISecret, Secret } from 'aws-cdk-lib/aws-secretsmanager'
 import { AbstractSNSPlatformApplication, AbstractSNSPlatformApplicationOptions } from './AbstractSNSPlatformApplication'
+import { IRole, Role } from 'aws-cdk-lib/aws-iam'
 
 
 type APNSPlatformTypes = 'APNS' | 'APNS_SANDBOX'
@@ -23,16 +24,16 @@ export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
     private secret: ISecret
 
     constructor(scope: Construct,  { name, platform, attributes, signingKeyId, signingKeySecretName, appBundleId, teamId }: SNSPlatformApplicationAPNSOptions) {
-        super(scope, 'SNSPlatformApplicationAPNS', { name, platform, attributes })
-
+        super(scope, 'SNSPlatformApplicationAPNS', { name, platform, attributes,
+            roleModifier: role => {
+                this.secret = Secret.fromSecretNameV2(this, 'Secret', signingKeySecretName)
+                this.secret.grantRead(role)
+            }
+        })
         this.signingKeyId = signingKeyId
         this.signingKeySecretName = signingKeySecretName
         this.appBundleId = appBundleId
         this.teamId = teamId
-
-        // Allow the lambda role to access the secret to get credentials for the Platform Application
-        this.secret = Secret.fromSecretNameV2(this, 'Secret', this.signingKeySecretName)
-        this.secret.grantRead(this.role)
     }
 
     resourceType(): string {
