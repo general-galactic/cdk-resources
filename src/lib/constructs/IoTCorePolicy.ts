@@ -1,5 +1,5 @@
 import { CustomResource, Duration, RemovalPolicy, Stack } from 'aws-cdk-lib'
-import { ManagedPolicy, PolicyDocument, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam'
+import { PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam'
 import { Runtime } from 'aws-cdk-lib/aws-lambda'
 import { NodejsFunction, SourceMapMode } from 'aws-cdk-lib/aws-lambda-nodejs'
 import { RetentionDays } from 'aws-cdk-lib/aws-logs'
@@ -71,7 +71,7 @@ export class IoTCorePolicy extends Construct {
             entry: join(__dirname, `../../../resources/lambdas/IoTCorePolicyVersionEventHandler/index.js`),
             handler: 'main',
             bundling: {
-              externalModules: ['aws-sdk'],
+              externalModules: ['aws-lambda'],
               sourceMap: true,
               sourceMapMode: SourceMapMode.INLINE,
               target: 'es2020',

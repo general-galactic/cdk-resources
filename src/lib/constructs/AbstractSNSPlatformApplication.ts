@@ -57,7 +57,7 @@ export abstract class AbstractSNSPlatformApplication extends Construct {
             entry: join(__dirname, `../../../resources/lambdas/SNSPlatformApplicationCustomResourceHandler/index.js`),
             handler: 'main',
             bundling: {
-              externalModules: ['aws-sdk'],
+              externalModules: ['aws-lambda'],
               sourceMap: true,
               sourceMapMode: SourceMapMode.INLINE,
               target: 'es2020',
