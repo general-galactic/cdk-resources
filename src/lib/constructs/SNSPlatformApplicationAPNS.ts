@@ -2,7 +2,6 @@ import { Stack } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import { ISecret, Secret } from 'aws-cdk-lib/aws-secretsmanager'
 import { AbstractSNSPlatformApplication, AbstractSNSPlatformApplicationOptions } from './AbstractSNSPlatformApplication'
-import { IRole, Role } from 'aws-cdk-lib/aws-iam'
 
 
 type APNSPlatformTypes = 'APNS' | 'APNS_SANDBOX'

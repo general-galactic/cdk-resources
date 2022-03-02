@@ -50,7 +50,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
     }
 
     private async buildAttributes(): Promise<{ [key: string]: string }> {
-        const attributes: { [key: string]: any } = this.attributes ?? {}
+        const attributes: { [key: string]: any } = this.attributes.attributes ?? {}
 
         if(this.attributes.platform === 'APNS' || this.attributes.platform === 'APNS_SANDBOX'){
             const signingKey = await this.fetchSigningKeySecret()
