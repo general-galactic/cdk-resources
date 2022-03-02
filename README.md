@@ -1,7 +1,6 @@
 # cdk-resources
 
-Custom resources for AWS CDK.
-
+Custom resources for AWS CDK. Install this module into your CDK stack: `npm install @general-galactic/cdk-resources` and use the resources as seen below.
 
 ## IoTCorePolicy
 
@@ -12,6 +11,10 @@ resouce will delete all of the policy versions and the policy itself.
 
 Here's how to use it:
 ```
+import { IoTCorePolicy } from '@general-galactic/cdk-resources'
+
+...
+
 // Build your own policy document with all of your topics and allowed actions
  const policy = new PolicyDocument()
     policy.addStatements(new PolicyStatement({
@@ -50,6 +53,10 @@ resource you must first log into the Apple Developer portal and generate a new A
 Once you've stored the key in AWS Secrets Manager, you can use this resource to create a Platform Application:
 
 ```
+import { SNSPlatformApplicationAPNS } from '@general-galactic/cdk-resources'
+
+...
+
 const apnsPlatformApplication = new SNSPlatformApplicationAPNS(this, '[provide name here]', {
     platform: 'APNS_SANDBOX', // or APNS
     signingKeySecretName: [the name of the signing key secret you stored above],
