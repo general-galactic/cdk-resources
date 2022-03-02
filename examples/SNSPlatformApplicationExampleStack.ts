@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Stack, StackProps } from 'aws-cdk-lib'
+import { CfnOutput, Stack, StackProps } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import { SNSPlatformApplicationAPNS } from '@general-galactic/cdk-resources'
 
@@ -8,7 +8,7 @@ export class SNSPlatformApplicationExampleStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
       super(scope, id, props)
 
-      new SNSPlatformApplicationAPNS(this, {
+      const platformApplication = new SNSPlatformApplicationAPNS(this, {
         name: process.env.SNS_PLATFORM_APP_NAME!,
         platform: process.env.SNS_PLATFORM_APP_PLATFORM! as 'APNS' | 'APNS_SANDBOX',
         signingKeyId: process.env.SNS_PLATFORM_APP_SIGNING_KEY_ID!,
@@ -17,6 +17,7 @@ export class SNSPlatformApplicationExampleStack extends Stack {
         teamId: process.env.SNS_PLATFORM_APP_TEAM_ID!
       })
 
+      new CfnOutput(this, 'snsPlatformApplicationARN', { value: platformApplication.PlatformApplicationArn ?? '' })
     }
 
 }

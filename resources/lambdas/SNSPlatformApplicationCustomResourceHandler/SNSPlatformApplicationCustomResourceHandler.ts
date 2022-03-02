@@ -42,6 +42,11 @@ export class SNSPlatformApplicationCustomResourceHandler {
         this.attributes = attributes
     }
 
+    private log(...args: any[]){
+        if(!this.attributes.debug) return 
+        console.log(...args)
+    }
+
     private async fetchSigningKeySecret(): Promise<string> {
         const command = new GetSecretValueCommand({ SecretId: this.attributes.signingKeySecretName })
         const result = await this.secretsClient.send(command)
@@ -61,7 +66,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
             attributes['ApplePlatformTeamID'] = this.attributes.teamId
         }
 
-        if(this.attributes.debug) console.log(`PLATFORM APPLICATION ATTRIBUTES: `, attributes)
+        this.log(`PLATFORM APPLICATION ATTRIBUTES: `, { ...attributes, PlatformCredential: '[hidden]' })
 
         return attributes
     }
@@ -78,13 +83,12 @@ export class SNSPlatformApplicationCustomResourceHandler {
     }
 
     async onCreate(): Promise<CdkCustomResourceResponse> {
-        console.log('CREATING PLATFORM APPLICATION: ', this.attributes.name, this.attributes.platform)
+        this.log('CREATING PLATFORM APPLICATION: ', this.attributes.name)
         const command = new CreatePlatformApplicationCommand({
             Name: this.attributes.name,
             Platform: this.attributes.platform,
             Attributes: await this.buildAttributes()
         })
-        console.log('CREATING PLATFORM APPLICATION - COMMAND: ', command)
         const result = await this.snsClient.send(command)
 
         return this.buildResponse(`Custom::GG-SNSPlatformApplication:${this.attributes.name}:${this.attributes.platform}`, { PlatformApplicationArn: result.PlatformApplicationArn! })
@@ -92,7 +96,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
 
     async onUpdate(physicalResourceId: string): Promise<CdkCustomResourceResponse> {
         const platformApplication = await this.findPlatformApplicationByName(this.attributes.name)
-        console.log('FOUND APP - UPDATING', platformApplication.PlatformApplicationArn)
+        this.log('FOUND PLATFORM APPLICATION - UPDATING', platformApplication.PlatformApplicationArn)
 
         const command = new SetPlatformApplicationAttributesCommand({
             PlatformApplicationArn: platformApplication.PlatformApplicationArn,
@@ -101,14 +105,14 @@ export class SNSPlatformApplicationCustomResourceHandler {
 
         await this.snsClient.send(command)
         
-        console.log('UPDATED', platformApplication.PlatformApplicationArn)
+        this.log('UPDATED PLATFORM APPLICATION', platformApplication.PlatformApplicationArn)
 
         return this.buildResponse(physicalResourceId, { PlatformApplicationArn: platformApplication.PlatformApplicationArn! })
     }
 
     async onDelete(physicalResourceId: string): Promise<CdkCustomResourceResponse> {
         const platformApplication = await this.findPlatformApplicationByName(this.attributes.name)
-        console.log('FOUND APP - DELETING', platformApplication.PlatformApplicationArn)
+        this.log('FOUND PLATFORM APPLICATION - DELETING', platformApplication.PlatformApplicationArn)
 
         const command = new DeletePlatformApplicationCommand({
             PlatformApplicationArn: platformApplication.PlatformApplicationArn
@@ -116,7 +120,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
 
         await this.snsClient.send(command)
 
-        console.log('DELETED', platformApplication.PlatformApplicationArn)
+        this.log('DELETED PLATFORM APPLICATION', platformApplication.PlatformApplicationArn)
 
         return this.buildResponse(physicalResourceId, { PlatformApplicationArn: platformApplication.PlatformApplicationArn! })
     }
@@ -129,16 +133,15 @@ export class SNSPlatformApplicationCustomResourceHandler {
     }
 
     private async findPlatformApplicationByName(name: string): Promise<PlatformApplication> {  
-        console.log('FINDING PLATFORM APP: ', name)      
+        this.log('FINDING PLATFORM APPLICATION: ', name)      
         const paginator = paginateListPlatformApplications({ client: this.snsClient }, {})
 
         let foundPlatformApplication: PlatformApplication | undefined
 
         for await (const page of paginator) {
-            console.log("GOT PAGE OF PLATFORM APPS:", page.PlatformApplications)
             if(page.PlatformApplications){
                 for(const platformApplication of page.PlatformApplications){
-                    console.log("CHECKING:", platformApplication.PlatformApplicationArn, platformApplication.PlatformApplicationArn?.endsWith(name))
+                    this.log("CHECKING PLATFORM APPLICATION:", platformApplication.PlatformApplicationArn)
 
                     if(platformApplication.PlatformApplicationArn?.endsWith(name)){
                         foundPlatformApplication = platformApplication
