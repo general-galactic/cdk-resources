@@ -1,5 +1,45 @@
 # cdk-resources
-Custom resources for AWS CDK
+
+Custom resources for AWS CDK.
+
+
+## IoTCorePolicy
+
+This resource can be used to manage IoT Core policies. The CDK version of IoT Core policies does not support policy versions.
+This resource supports version by allowing maintaining the last 5 versions. When you create a new version it is automatically
+marked as the default version. When you have more than 5 versions the oldest one will be deleted. When destroying your stack, this
+resouce will delete all of the policy versions and the policy itself.
+
+Here's how to use it:
+```
+// Build your own policy document with all of your topics and allowed actions
+ const policy = new PolicyDocument()
+    policy.addStatements(new PolicyStatement({
+    resources: [
+        `arn:aws:iot:${Stack.of(this).region}:${Stack.of(this).account}:client/\${iot:Connection.Thing.ThingName}`
+    ],
+    actions: [
+        'iot:Connect'
+    ]
+}))
+
+const iotPolicy = new IoTCorePolicy(this, 'testPolicy', policy)
+```
+
+This Resource will create several entities in AWS:
+
+- **Event Handler Lambda**: This lambda is used by the resource to perform the actual work of creating, updating, and deleting the policies and versions.
+- **Cloudwatch Log Groups**: You'll see log groups created for the event handler lambda and the custom resource itself. These logs can assist in troubleshooting.
+- **IAM Role**: You'll find an IAM role used to execute the Event Handler Lambda. This role will have permissions to execute the lambda and manage policies and policy versions.
+- **IoT Core Policy**: The policy you are managing.
+
+Do not delete or edit any of these resources outside of your CDK stack or you will cause yourself headaches.
+
+### Outputs
+
+- **createdPolicyVersion** - The policy version created if a version was created
+- **deletedPolicyVersion** - The policy version deleted if a version was deleted ( > than 5 versions )
+- **policyArn** - The ARN of your IoT Core policy
 
 
 ## SNSPlatformApplication

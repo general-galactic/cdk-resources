@@ -12,7 +12,7 @@ export class IoTCorePolicyExampleStack extends Stack {
       const policy = new PolicyDocument()
       policy.addStatements(new PolicyStatement({
         resources: [
-          `arn:aws:iot:${Stack.of(this).region}:${Stack.of(this).account}:client/\${iot:Connection.Thing.ThingName}`
+          `arn:aws:iot:${Stack.of(this).region}:${Stack.of(this).account}:client/\${iot:Connection.Thing.ThingName}/v6`
         ],
         actions: [
           'iot:Connect'
