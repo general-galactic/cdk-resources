@@ -1,16 +1,15 @@
-import { CdkCustomResourceEvent, CdkCustomResourceResponse } from 'aws-lambda'
 import 'source-map-support/register'
-import { AWSError, Iot } from 'aws-sdk'
-import { CreatePolicyResponse, CreatePolicyVersionResponse, GetPolicyResponse, ListPolicyVersionsResponse, PolicyVersion } from 'aws-sdk/clients/iot'
+import { CdkCustomResourceEvent, CdkCustomResourceResponse } from 'aws-lambda'
+import { IoTClient, CreatePolicyCommand, GetPolicyCommand, ListPolicyVersionsCommand, DeletePolicyVersionCommand, DeletePolicyCommand, CreatePolicyVersionCommand } from '@aws-sdk/client-iot'
 
 export class IotCorePolicyCustomResourceHandler {
 
-    private client: Iot
+    private client: IoTClient
     private policyName: string
     private policyDocument: string
     private debug: boolean
 
-    constructor(client: Iot, policyName: string, policyDocument: string, debug = false){
+    constructor(client: IoTClient, policyName: string, policyDocument: string, debug = false){
         this.client = client
         this.policyName = policyName
         this.policyDocument = policyDocument
@@ -31,7 +30,7 @@ export class IotCorePolicyCustomResourceHandler {
     async onCreate(): Promise<CdkCustomResourceResponse> {
         const policy = await this.createPolicy()
         if(!policy) throw new Error(`Unable to create policy.`)
-        return this.buildResponse(`Custom::VersionedIoTPolicy:${this.policyName}`, { deletedVersion: '', createdVersion: '1', policyArn: policy.policyArn }) // create events need to create physical ids, other events are passed the PhysicalResourceId
+        return this.buildResponse(`Custom::VersionedIoTPolicy:${this.policyName}`, { deletedVersion: '', createdVersion: policy.version, policyArn: policy.policyArn })
     }
 
     async onUpdate(physicalResourceId: string): Promise<CdkCustomResourceResponse> {
@@ -42,18 +41,23 @@ export class IotCorePolicyCustomResourceHandler {
 
         const newVersion = await this.createPolicyVersion()
 
-        return this.buildResponse(physicalResourceId, { deletedVersion: deletedVersion ?? '', createdVersion: newVersion?.policyVersionId ?? '', policyArn: newVersion?.policyArn ?? '' })
+        return this.buildResponse(physicalResourceId, { deletedVersion: deletedVersion ?? '', createdVersion: newVersion?.versionId ?? '', policyArn: newVersion?.policyArn ?? '' })
     }
 
     async onDelete(physicalResourceId: string): Promise<CdkCustomResourceResponse> {
         const versions = await this.listPolicyVersions()
         for(const version of versions){
             if(!version.isDefaultVersion){ // The default version gets deleted by deletePolicy
-                await this.deletePolicyVersion(version)
+                await this.deletePolicyVersion(version.versionId)
             }
         }
         await this.deletePolicy()
         return this.buildResponse(physicalResourceId, { deletedVersion: '*', createdVersion: '', policyArn: '' })
+    }
+
+    private log(...args: any[]){
+        if(!this.debug) return 
+        console.log(...args)
     }
 
     buildResponse(physicalResourceId: string, data?: { deletedVersion: string, createdVersion: string, policyArn: string }): CdkCustomResourceResponse {
@@ -71,7 +75,7 @@ export class IotCorePolicyCustomResourceHandler {
         const versions = await this.listPolicyVersions()
         if(versions.length < 5) return undefined
 
-        let versionToDelete: Required<PolicyVersion> | undefined
+        let versionToDelete: { versionId: string, isDefaultVersion: boolean } | undefined
 
         for( const version of versions){
             if(versionToDelete === undefined || parseInt(version.versionId, 10) < parseInt(versionToDelete.versionId, 10)){
@@ -87,86 +91,95 @@ export class IotCorePolicyCustomResourceHandler {
             throw new Error(`Cannot delete version: ${versionToDelete.versionId} because it is the default version.`)
         }
 
-        if(!await this.deletePolicyVersion(versionToDelete)){
+        if(!await this.deletePolicyVersion(versionToDelete.versionId)){
             throw new Error(`Failed to delete policy version: ${versionToDelete.versionId}`)
         }
 
-        if(this.debug) console.log(`Deleted policy version: ${this.policyName} -> ${versionToDelete.versionId}`)
+        this.log(`Deleted policy version: ${this.policyName} -> ${versionToDelete.versionId}`)
         return versionToDelete.versionId
     }
 
 
     // AWS PROMISE WRAPPERS
     
-    getPolicy(this: IotCorePolicyCustomResourceHandler): Promise<Required<GetPolicyResponse> | undefined> {
-        return new Promise((resolve, reject) => {
-            this.client.getPolicy({ policyName: this.policyName }, (error:AWSError, data: GetPolicyResponse) => {
-                if(this.debug) console.log('Got Policy: ', error, data)
-                if(error) return reject(error)
-                if(data.policyName){
-                    resolve(data as Required<GetPolicyResponse>)
-                }
-                resolve(undefined)
-            })
+    async getPolicy(this: IotCorePolicyCustomResourceHandler): Promise<Required<{ policyArn: string, version: string }> | undefined> {
+        const command = new GetPolicyCommand({
+            policyName: this.policyName
+        })
+
+        const result = await this.client.send(command)
+
+        return {
+            policyArn: result.policyArn!,
+            version: result.defaultVersionId!
+        }
+    }
+
+    async createPolicy(): Promise<Required<{ policyArn: string, version: string }> | undefined> {
+        const command = new CreatePolicyCommand({
+            policyName: this.policyName,
+            policyDocument: this.policyDocument
+        })
+
+        const result = await this.client.send(command)
+
+        return {
+            policyArn: result.policyArn!,
+            version: result.policyVersionId!
+        }
+    }
+
+    async listPolicyVersions(): Promise<{ versionId: string, isDefaultVersion: boolean}[]> {
+        const command = new ListPolicyVersionsCommand({
+            policyName: this.policyName
+        })
+
+        const result = await this.client.send(command)
+        result.policyVersions
+
+        if(!result.policyVersions) return []
+        return result.policyVersions.map( v => {
+            return { versionId: v.versionId!, isDefaultVersion: v.isDefaultVersion ?? false }
         })
     }
 
-    createPolicy(): Promise<Required<CreatePolicyResponse> | undefined> {
-        return new Promise((resolve, reject) => {
-            this.client.createPolicy({ policyName: this.policyName, policyDocument: this.policyDocument }, (error: AWSError, data: CreatePolicyResponse) => {
-                if(this.debug) console.log('Created Policy: ', error, data)
-                if(error) return reject(error)
-                if(data.policyName){
-                    resolve(data as Required<CreatePolicyResponse>)
-                }
-                resolve(undefined)
-            })
+    async deletePolicyVersion(policyVersionId: string): Promise<boolean> {
+        const command = new DeletePolicyVersionCommand({
+            policyName: this.policyName,
+            policyVersionId
         })
+
+        await this.client.send(command)
+        this.log('Deleted Policy Version: ', policyVersionId)
+
+        return true
     }
 
-    listPolicyVersions(): Promise<Required<PolicyVersion>[]> {
-        return new Promise((resolve, reject) => {
-            this.client.listPolicyVersions({ policyName: this.policyName }, (error: AWSError, data: ListPolicyVersionsResponse) => {
-                if(this.debug) console.log('Got Policy Versions: ', error, data)
-                if(error) return reject(error)
-                if(data.policyVersions){
-                    return resolve(data.policyVersions as Required<PolicyVersion>[])
-                }
-                resolve([])
-            })
+    async deletePolicy(): Promise<boolean> {
+        const command = new DeletePolicyCommand({
+            policyName: this.policyName
         })
+
+        await this.client.send(command)
+        this.log('Deleted Policy')
+
+        return true
     }
 
-    deletePolicyVersion(policyVersion: Required<PolicyVersion>): Promise<boolean> {
-        return new Promise((resolve, reject) => {
-            this.client.deletePolicyVersion({ policyName: this.policyName, policyVersionId: policyVersion.versionId }, (error: AWSError, data: {}) => {
-                if(this.debug) console.log('Delete Policy Version: ', policyVersion, error, data)
-                if(error) return reject(error)
-                resolve(true)
-            })
+    async createPolicyVersion(): Promise<{ policyArn: string, versionId: string } | undefined> {
+        const command = new CreatePolicyVersionCommand({
+            policyName: this.policyName,
+            policyDocument: this.policyDocument,
+            setAsDefault: true
         })
-    }
 
-    deletePolicy(): Promise<boolean> {
-        return new Promise((resolve, reject) => {
-            this.client.deletePolicy({ policyName: this.policyName }, (error: AWSError, data: {}) => {
-                if(this.debug) console.log('Delete Policy: ', error, data)
-                if(error) return reject(error)
-                resolve(true)
-            })
-        })
-    }
+        const result = await this.client.send(command)
+        this.log('Created Policy Version: ', result)
 
-    createPolicyVersion(): Promise<Required<CreatePolicyVersionResponse> | undefined> {
-        return new Promise((resolve, reject) => {
-            this.client.createPolicyVersion({ policyName: this.policyName, policyDocument: this.policyDocument, setAsDefault: true }, (error: AWSError, data: CreatePolicyVersionResponse) => {
-                if(this.debug) console.log('Created Policy Version: ', error, data)
-                if(error) return reject(error)
-
-                if(!data.policyArn) throw new Error(`createPolicyVersion response does not contain an arn. Failed to create policy version.`)
-                resolve(data as Required<CreatePolicyVersionResponse>)
-            })
-        })
+        return {
+            versionId: result.policyVersionId!,
+            policyArn: result.policyArn!
+        }
     }
 
 }

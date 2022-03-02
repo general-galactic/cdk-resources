@@ -1,12 +1,19 @@
 
-## Setup
+## Testing the IoTCorePolicy Resource
 
-### APNS Signing Key Id
+1. Run `npm i`
+1. Run `tsc`
+1. Run `cdk deploy IoTCorePolicyExample --profile [ the name of the AWS profile you're using - can be omitted if you're using DEFAULT ]` in `/exaxmples`
+
+
+## Testing the SNSPlatformApplication Resource
+
+### Get an APNS Signing Key
 
 First, you'll need to log into the Apple Developer portal and create an APNS signing key for token based credentials. This process will generate a signing key which you will download.
 You'll need to take the contents of the signing key id and put them into a plain-text secret in AWS Secrets Manager.
 
-### Environment
+### Setup the Environment
 
 Next, you'll need to create a `.env` file in the `examples` folder with the following keys:
 
@@ -24,9 +31,5 @@ SNS_PLATFORM_APP_TEAM_ID=[The team id from the Apple Developer portal]
 ### Deploying
 
 1. Run `npm i`
-2. Run `tsc`
-3. Run `npm link`
-3. Run `npm link @general-galactic/cdk-resources` in `/examples`
-3. Run `npm i` in `/examples`
-4. Run `tsc` in `/examples`
-5. Run `cdk deploy SNSPlatformApplicationExample --profile [ the name of the AWS profile you're using - can be omitted if you're using DEFAULT ]` in `/exaxmples`
+1. Run `tsc`
+1. Run `cdk deploy SNSPlatformApplicationExample --profile [ the name of the AWS profile you're using - can be omitted if you're using DEFAULT ]` in `/exaxmples`

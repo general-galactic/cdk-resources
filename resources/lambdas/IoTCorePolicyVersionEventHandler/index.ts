@@ -1,11 +1,11 @@
 import { Context, CdkCustomResourceEvent, CdkCustomResourceResponse } from 'aws-lambda'
 import 'source-map-support/register'
-import {  Iot } from 'aws-sdk'
 import { IotCorePolicyCustomResourceHandler } from './IotCorePolicyCustomResourceHandler'
+import { IoTClient } from '@aws-sdk/client-iot'
 
 export async function main(event: CdkCustomResourceEvent, _context: Context): Promise<CdkCustomResourceResponse> {
 
-    const client = new Iot({
+    const client = new IoTClient({
         region: event.ResourceProperties.region,
         credentials: {
             accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
