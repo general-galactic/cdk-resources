@@ -35,7 +35,7 @@ export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
         this.secret = Secret.fromSecretNameV2(this, 'Secret', this.signingKeySecretName)
         this.secret.grantRead(this.role)
 
-        this.onEventHandler = this.setupEventHandler(this.role)
+        this.onEventHandler = this.setupEventHandler()
         this.provider = this.setupProvider(this.onEventHandler)
         this.resource = this.setupResource(this.provider, 'Custom::SNSPlatformApplicationAPNS', this.buildEventHandlerProperties() )
     }
