@@ -170,9 +170,6 @@ export class SNSPlatformApplicationCustomResourceHandler {
     private async handleNameChange(): Promise<CdkCustomResourceResponse>{
         this.log(`Platform application name changed: ${this.oldEventResourceProperties.name} -> ${this.eventResourceProperties.name}. Creating a new platform application.`)
 
-        // Opting not to delete the old platform application here as it invalidates all endpoints and could be very destructive. We'll create
-        // a new platform application and the user can delete the old one if desired.
-
         const createCommand = new CreatePlatformApplicationCommand({
             Name: this.eventResourceProperties.name,
             Platform: this.eventResourceProperties.platform,
@@ -180,6 +177,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
         })
         const result = await this.snsClient.send(createCommand)
 
+        // CloudFormation deletes the old platform application because the physical resource id changes with the new name here. I see that delete is called automatically in testing.
         return this.buildResponse(`Custom::GG-SNSPlatformApplication:${this.eventResourceProperties.name}:${this.eventResourceProperties.platform}`, { PlatformApplicationArn: result.PlatformApplicationArn! })
     }
 

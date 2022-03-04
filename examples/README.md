@@ -33,3 +33,8 @@ SNS_PLATFORM_APP_TEAM_ID=[The team id from the Apple Developer portal]
 1. Run `npm i`
 1. Run `tsc`
 1. Run `cdk deploy SNSPlatformApplicationExample --profile [ the name of the AWS profile you're using - can be omitted if you're using DEFAULT ]` in `/exaxmples`
+
+### WARNING
+
+Changing the name of your platform application will result in deleting and creating a new platform application. This could be bad if you have a bunch of 
+endpooints and accidentally delete them all.
