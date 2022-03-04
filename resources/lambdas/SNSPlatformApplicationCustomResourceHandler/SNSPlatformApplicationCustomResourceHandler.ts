@@ -168,7 +168,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
     }
 
     private async handleNameChange(): Promise<CdkCustomResourceResponse>{
-        this.log(`Platform application name changed: ${this.oldEventResourceProperties.name} -> ${this.eventResourceProperties.name}. Will delete and recreate.`)
+        this.log(`Platform application name changed: ${this.oldEventResourceProperties.name} -> ${this.eventResourceProperties.name}. Creating a new platform application.`)
 
         const platformApplication = await this.findPlatformApplicationByName(this.oldEventResourceProperties.name)
         if(!platformApplication){
@@ -180,13 +180,6 @@ export class SNSPlatformApplicationCustomResourceHandler {
             this.log(`No platform application arn found '${this.oldEventResourceProperties.name}'`)
             throw new Error(`No platform application arn found '${this.oldEventResourceProperties.name}'`)
         }
-
-        // Name changes need to be deleted and recreated
-        const deleteCommand = new DeletePlatformApplicationCommand({
-            PlatformApplicationArn: this.oldEventResourceProperties.name
-        })
-        await this.snsClient.send(deleteCommand)
-        this.log('DELETED PLATFORM APPLICATION: ', this.oldEventResourceProperties.name)
 
         const createCommand = new CreatePlatformApplicationCommand({
             Name: this.eventResourceProperties.name,

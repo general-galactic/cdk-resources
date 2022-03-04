@@ -13,7 +13,7 @@ export type SNSPlatformApplicationAPNSOptions = AbstractSNSPlatformApplicationOp
     signingKeySecretName: string
     appBundleId: string
     teamId: string
-    debug: boolean
+    debug: 'enabled' | 'disabled' | undefined
 }
 
 export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
@@ -22,7 +22,7 @@ export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
     readonly signingKeySecretName: string
     readonly appBundleId: string
     readonly teamId: string
-    readonly debug: boolean
+    readonly debug: 'enabled' | 'disabled'
 
     private secret: ISecret
 
@@ -33,7 +33,7 @@ export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
         this.signingKeySecretName = signingKeySecretName
         this.appBundleId = appBundleId
         this.teamId = teamId
-        this.debug = debug
+        this.debug = debug ?? 'disabled'
 
         this.secret = Secret.fromSecretNameV2(this, 'Secret', this.signingKeySecretName)
 
