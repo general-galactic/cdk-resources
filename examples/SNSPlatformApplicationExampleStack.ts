@@ -18,7 +18,7 @@ export class SNSPlatformApplicationExampleStack extends Stack {
         debug: 'enabled'
       })
 
-      const firebasePlatformApplication = new SNSPlatformApplicationAPNS(this, {
+      const firebasePlatformApplication = new SNSPlatformApplicationFirebase(this, {
         name: process.env.SNS_PLATFORM_APP_NAME!,
         platform: 'GCM',
         signingKeyId: process.env.SNS_PLATFORM_APP_SIGNING_KEY_ID!,
