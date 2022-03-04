@@ -1,6 +1,6 @@
 import { SNSClient, CreatePlatformApplicationCommand, DeletePlatformApplicationCommand, paginateListPlatformApplications, PlatformApplication, SetPlatformApplicationAttributesCommand } from '@aws-sdk/client-sns'
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager'
-import { CdkCustomResourceEvent, CdkCustomResourceResponse } from 'aws-lambda'
+import { CdkCustomResourceEvent, CdkCustomResourceResponse, CloudFormationCustomResourceDeleteEvent, CloudFormationCustomResourceUpdateEvent } from 'aws-lambda'
 
 
 type SNSPlatformApplicationPlatforms = 'ADM' | 'APNS' | 'APNS_SANDBOX' | 'GCM'
@@ -76,9 +76,9 @@ export class SNSPlatformApplicationCustomResourceHandler {
             case 'Create':
                 return this.onCreate()
             case 'Update':
-                return this.onUpdate(event.PhysicalResourceId)
+                return this.onUpdate(event as CloudFormationCustomResourceUpdateEvent)
             case 'Delete':
-                return this.onDelete(event.PhysicalResourceId)
+                return this.onDelete(event as CloudFormationCustomResourceDeleteEvent)
         }
     }
 
@@ -94,7 +94,9 @@ export class SNSPlatformApplicationCustomResourceHandler {
         return this.buildResponse(`Custom::GG-SNSPlatformApplication:${this.attributes.name}:${this.attributes.platform}`, { PlatformApplicationArn: result.PlatformApplicationArn! })
     }
 
-    async onUpdate(physicalResourceId: string): Promise<CdkCustomResourceResponse> {
+    async onUpdate(event: CloudFormationCustomResourceUpdateEvent): Promise<CdkCustomResourceResponse> {
+        this.log('DELETING PLATFORM APPLICATION', event.ResourceProperties, event.OldResourceProperties)
+        
         const platformApplication = await this.findPlatformApplicationByName(this.attributes.name)
         this.log('FOUND PLATFORM APPLICATION - UPDATING', platformApplication.PlatformApplicationArn)
 
@@ -107,10 +109,12 @@ export class SNSPlatformApplicationCustomResourceHandler {
         
         this.log('UPDATED PLATFORM APPLICATION', platformApplication.PlatformApplicationArn)
 
-        return this.buildResponse(physicalResourceId, { PlatformApplicationArn: platformApplication.PlatformApplicationArn! })
+        return this.buildResponse(event.PhysicalResourceId, { PlatformApplicationArn: platformApplication.PlatformApplicationArn! })
     }
 
-    async onDelete(physicalResourceId: string): Promise<CdkCustomResourceResponse> {
+    async onDelete(event: CloudFormationCustomResourceDeleteEvent): Promise<CdkCustomResourceResponse> {
+        this.log('DELETING PLATFORM APPLICATION', event.ResourceProperties)
+
         const platformApplication = await this.findPlatformApplicationByName(this.attributes.name)
         this.log('FOUND PLATFORM APPLICATION - DELETING', platformApplication.PlatformApplicationArn)
 
@@ -122,7 +126,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
 
         this.log('DELETED PLATFORM APPLICATION', platformApplication.PlatformApplicationArn)
 
-        return this.buildResponse(physicalResourceId, { PlatformApplicationArn: platformApplication.PlatformApplicationArn! })
+        return this.buildResponse(event.PhysicalResourceId, { PlatformApplicationArn: platformApplication.PlatformApplicationArn! })
     }
 
     private buildResponse(physicalResourceId: string, data?: { PlatformApplicationArn: string }): CdkCustomResourceResponse {
