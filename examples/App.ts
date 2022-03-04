@@ -13,10 +13,9 @@ new SNSPlatformApplicationExampleStack(app, 'SNSPlatformApplicationExample', {
   }
 })
 
-
-new IoTCorePolicyExampleStack(app, 'IoTCorePolicyExample', {
-  env: {
-    account: process.env.ACCOUNT_ID,
-    region: process.env.REGION
-  }
-})
+// new IoTCorePolicyExampleStack(app, 'IoTCorePolicyExample', {
+//   env: {
+//     account: process.env.ACCOUNT_ID,
+//     region: process.env.REGION
+//   }
+// })

@@ -13,6 +13,7 @@ export type SNSPlatformApplicationAPNSOptions = AbstractSNSPlatformApplicationOp
     signingKeySecretName: string
     appBundleId: string
     teamId: string
+    debug: boolean
 }
 
 export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
@@ -21,15 +22,18 @@ export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
     readonly signingKeySecretName: string
     readonly appBundleId: string
     readonly teamId: string
+    readonly debug: boolean
+
     private secret: ISecret
 
-    constructor(scope: Construct, { name, platform, attributes, signingKeyId, signingKeySecretName, appBundleId, teamId }: SNSPlatformApplicationAPNSOptions) {
+    constructor(scope: Construct, { name, platform, attributes, signingKeyId, signingKeySecretName, appBundleId, teamId, debug }: SNSPlatformApplicationAPNSOptions) {
         super(scope, 'SNSPlatformApplicationAPNS', { name, platform, attributes })
 
         this.signingKeyId = signingKeyId
         this.signingKeySecretName = signingKeySecretName
         this.appBundleId = appBundleId
         this.teamId = teamId
+        this.debug = debug
 
         this.secret = Secret.fromSecretNameV2(this, 'Secret', this.signingKeySecretName)
 
@@ -64,7 +68,8 @@ export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
             signingKeyId: this.signingKeyId,
             signingKeySecretName: this.signingKeySecretName,
             appBundleId: this.appBundleId,
-            teamId: this.teamId
+            teamId: this.teamId,
+            debug: this.debug
         }
     }
  

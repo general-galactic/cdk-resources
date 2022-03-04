@@ -12,7 +12,7 @@
     "@types/node": "^17.0.21"
   },
   "dependencies": {
-    "@general-galactic/cdk-resources": "^1.0.32",
+    "@general-galactic/cdk-resources": "^1.0.34",
     "dotenv": "^16.0.0"
   }
 }

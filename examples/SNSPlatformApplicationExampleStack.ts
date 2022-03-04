@@ -14,7 +14,8 @@ export class SNSPlatformApplicationExampleStack extends Stack {
         signingKeyId: process.env.SNS_PLATFORM_APP_SIGNING_KEY_ID!,
         signingKeySecretName: process.env.SNS_PLATFORM_APP_SIGNING_KEY_SECRET_NAME!,
         appBundleId: process.env.SNS_PLATFORM_APP_BUNDLE_ID!,
-        teamId: process.env.SNS_PLATFORM_APP_TEAM_ID!
+        teamId: process.env.SNS_PLATFORM_APP_TEAM_ID!,
+        debug: true
       })
 
       new CfnOutput(this, 'snsPlatformApplicationARN', { value: platformApplication.PlatformApplicationArn ?? '' })
