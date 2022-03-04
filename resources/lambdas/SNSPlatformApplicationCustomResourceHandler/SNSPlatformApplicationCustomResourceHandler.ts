@@ -95,9 +95,19 @@ export class SNSPlatformApplicationCustomResourceHandler {
     }
 
     async onUpdate(event: CloudFormationCustomResourceUpdateEvent): Promise<CdkCustomResourceResponse> {
-        this.log('DELETING PLATFORM APPLICATION', event.ResourceProperties, event.OldResourceProperties)
+        this.log('UPDATING PLATFORM APPLICATION', event.ResourceProperties, event.OldResourceProperties)
         
         const platformApplication = await this.findPlatformApplicationByName(this.attributes.name)
+        if(!platformApplication){
+            this.log(`No platform application found '${this.attributes.name}': exiting silently`)
+            return this.buildResponse(event.PhysicalResourceId, { PlatformApplicationArn: '' })
+        }
+
+        if(!platformApplication.PlatformApplicationArn){
+            this.log(`No platform application arn found '${this.attributes.name}': exiting silently`)
+            return this.buildResponse(event.PhysicalResourceId, { PlatformApplicationArn: '' })
+        }
+
         this.log('FOUND PLATFORM APPLICATION - UPDATING', platformApplication.PlatformApplicationArn)
 
         const command = new SetPlatformApplicationAttributesCommand({
@@ -116,6 +126,16 @@ export class SNSPlatformApplicationCustomResourceHandler {
         this.log('DELETING PLATFORM APPLICATION', event.ResourceProperties)
 
         const platformApplication = await this.findPlatformApplicationByName(this.attributes.name)
+        if(!platformApplication){
+            this.log(`No platform application found '${this.attributes.name}': exiting silently`)
+            return this.buildResponse(event.PhysicalResourceId, { PlatformApplicationArn: '' })
+        }
+
+        if(!platformApplication.PlatformApplicationArn){
+            this.log(`No platform application arn found '${this.attributes.name}': exiting silently`)
+            return this.buildResponse(event.PhysicalResourceId, { PlatformApplicationArn: '' })
+        }
+
         this.log('FOUND PLATFORM APPLICATION - DELETING', platformApplication.PlatformApplicationArn)
 
         const command = new DeletePlatformApplicationCommand({
@@ -136,7 +156,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
         }
     }
 
-    private async findPlatformApplicationByName(name: string): Promise<PlatformApplication> {  
+    private async findPlatformApplicationByName(name: string): Promise<PlatformApplication | undefined> {  
         this.log('FINDING PLATFORM APPLICATION: ', name)      
         const paginator = paginateListPlatformApplications({ client: this.snsClient }, {})
 
@@ -153,14 +173,6 @@ export class SNSPlatformApplicationCustomResourceHandler {
                     }
                 }
             }
-        }
-
-        if(!foundPlatformApplication){
-            throw new Error(`Platform application not found: ${name}`)
-        }
-
-        if(!foundPlatformApplication.PlatformApplicationArn){
-            throw new Error(`Platform application does not contain its ARN: ${name}`)
         }
 
         return foundPlatformApplication
