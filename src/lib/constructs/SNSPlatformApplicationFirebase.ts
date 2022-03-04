@@ -2,11 +2,10 @@ import { Stack } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import { ISecret, Secret } from 'aws-cdk-lib/aws-secretsmanager'
 import { AbstractSNSPlatformApplication, AbstractSNSPlatformApplicationOptions } from './AbstractSNSPlatformApplication'
-import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 
 
 export type SNSPlatformApplicationFirebaseOptions = AbstractSNSPlatformApplicationOptions & {
-    platform: 'Firebase'
+    platform: 'GCM'
     firebaseCloudMessagingServerKeySecretName: string
 }
 

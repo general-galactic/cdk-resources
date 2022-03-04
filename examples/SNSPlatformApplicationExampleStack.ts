@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { CfnOutput, Stack, StackProps } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import { SNSPlatformApplicationAPNS } from '@general-galactic/cdk-resources'
+import { SNSPlatformApplicationAPNS, SNSPlatformApplicationFirebase } from '@general-galactic/cdk-resources'
 
 export class SNSPlatformApplicationExampleStack extends Stack {
 
