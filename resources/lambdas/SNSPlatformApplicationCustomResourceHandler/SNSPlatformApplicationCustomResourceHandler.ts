@@ -3,26 +3,25 @@ import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-sec
 import { CdkCustomResourceEvent, CdkCustomResourceResponse, CloudFormationCustomResourceDeleteEvent, CloudFormationCustomResourceUpdateEvent } from 'aws-lambda'
 
 
-type SNSPlatformApplicationPlatforms = 'ADM' | 'APNS' | 'APNS_SANDBOX' | 'GCM'
+type SNSPlatformApplicationPlatforms = 'APNS' | 'APNS_SANDBOX' | 'GCM'
 
-type APNSSecret = {
-    signingKey: string
-    signingKeyId: string
-    appBundleId: string
-    teamId: string
-}
 
 export type ResourceProperties = {
     name: string
     platform: SNSPlatformApplicationPlatforms
-    attributes: { [key: string]: any },
+    attributes: { [key: string]: any }
     region: string
     account: string
-    signingKeyId: string
-    signingKeySecretName: string
-    appBundleId: string
-    teamId: string
     debug: boolean
+
+    // Apple specific
+    apnsSigningKeyId?: string
+    apnsSigningKeySecretName?: string
+    apnsAppBundleId?: string
+    apnsTeamId?: string
+
+    // Firebase specific
+    firebaseCloudMessagingServerKeySecretName?: string
 }
 
 export type SNSPlatformApplicationCustomResourceHandlerOptions = {
@@ -60,9 +59,16 @@ export class SNSPlatformApplicationCustomResourceHandler {
     }
 
     private async fetchSigningKeySecret(): Promise<string> {
-        const command = new GetSecretValueCommand({ SecretId: this.eventResourceProperties.signingKeySecretName })
+        const command = new GetSecretValueCommand({ SecretId: this.eventResourceProperties.apnsSigningKeySecretName! })
         const result = await this.secretsClient.send(command)
-        if(!result.SecretString) throw new Error(`Unable to fetch the signingKey secret. Make sure you manually created the secret: ${this.eventResourceProperties.signingKeySecretName}`)
+        if(!result.SecretString) throw new Error(`Unable to fetch the signingKey secret. Make sure you manually created the secret: ${this.eventResourceProperties.apnsSigningKeySecretName!}`)
+        return result.SecretString
+    }
+
+    private async fetchFirebaseCloudMessagingServerKeySecret(): Promise<string> {
+        const command = new GetSecretValueCommand({ SecretId: this.eventResourceProperties.firebaseCloudMessagingServerKeySecretName! })
+        const result = await this.secretsClient.send(command)
+        if(!result.SecretString) throw new Error(`Unable to fetch the signingKey secret. Make sure you manually created the secret: ${this.eventResourceProperties.firebaseCloudMessagingServerKeySecretName!}`)
         return result.SecretString
     }
 
@@ -71,11 +77,15 @@ export class SNSPlatformApplicationCustomResourceHandler {
 
         if(this.eventResourceProperties.platform === 'APNS' || this.eventResourceProperties.platform === 'APNS_SANDBOX'){
             const signingKey = await this.fetchSigningKeySecret()
-
             attributes['PlatformCredential'] = signingKey
-            attributes['PlatformPrincipal'] = this.eventResourceProperties.signingKeyId
-            attributes['ApplePlatformBundleID'] = this.eventResourceProperties.appBundleId
-            attributes['ApplePlatformTeamID'] = this.eventResourceProperties.teamId
+            attributes['PlatformPrincipal'] = this.eventResourceProperties.apnsSigningKeyId
+            attributes['ApplePlatformBundleID'] = this.eventResourceProperties.apnsAppBundleId
+            attributes['ApplePlatformTeamID'] = this.eventResourceProperties.apnsTeamId
+        }else if(this.eventResourceProperties.platform === 'GCM'){
+            const serverKey = await this.fetchFirebaseCloudMessagingServerKeySecret()
+            attributes['PlatformCredential'] = serverKey
+        }else{
+            throw new Error(`Unknown platform: ${this.eventResourceProperties.platform}`)
         }
 
         this.log(`PLATFORM APPLICATION ATTRIBUTES: `, { ...attributes, PlatformCredential: '[hidden]' })

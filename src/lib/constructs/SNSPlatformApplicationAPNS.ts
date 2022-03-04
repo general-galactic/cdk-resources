@@ -5,15 +5,12 @@ import { AbstractSNSPlatformApplication, AbstractSNSPlatformApplicationOptions }
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 
 
-type APNSPlatformTypes = 'APNS' | 'APNS_SANDBOX'
-
 export type SNSPlatformApplicationAPNSOptions = AbstractSNSPlatformApplicationOptions & {
-    platform: APNSPlatformTypes
+    platform: 'APNS' | 'APNS_SANDBOX'
     signingKeyId: string
     signingKeySecretName: string
     appBundleId: string
     teamId: string
-    debug: 'enabled' | 'disabled' | undefined
 }
 
 export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
@@ -27,30 +24,18 @@ export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
     private secret: ISecret
 
     constructor(scope: Construct, { name, platform, attributes, signingKeyId, signingKeySecretName, appBundleId, teamId, debug }: SNSPlatformApplicationAPNSOptions) {
-        super(scope, 'SNSPlatformApplicationAPNS', { name, platform, attributes })
+        super(scope, 'SNSPlatformApplicationAPNS', { name, platform, attributes, debug })
 
+        this.debug = debug ?? 'disabled'
         this.signingKeyId = signingKeyId
         this.signingKeySecretName = signingKeySecretName
         this.appBundleId = appBundleId
         this.teamId = teamId
-        this.debug = debug ?? 'disabled'
 
         this.secret = Secret.fromSecretNameV2(this, 'Secret', this.signingKeySecretName)
 
         this.onEventHandler = this.setupEventHandler()
         if(this.onEventHandler.role){
-            this.onEventHandler.role.addToPrincipalPolicy(new PolicyStatement({
-                actions: [
-                    'SNS:CreatePlatformApplication',
-                    'SNS:DeletePlatformApplication',
-                    'SNS:ListPlatformApplications',
-                    'SNS:SetPlatformApplicationAttributes'
-                ],
-                resources: [
-                    `arn:aws:sns:${Stack.of(this).region}:${Stack.of(this).account}:*`
-                ]
-            }))
-
             this.secret.grantRead(this.onEventHandler.role)
         }
 
@@ -65,11 +50,12 @@ export class SNSPlatformApplicationAPNS extends AbstractSNSPlatformApplication {
             attributes: this.attributes,
             region: Stack.of(this).region,
             account: Stack.of(this).account,
-            signingKeyId: this.signingKeyId,
-            signingKeySecretName: this.signingKeySecretName,
-            appBundleId: this.appBundleId,
-            teamId: this.teamId,
-            debug: this.debug
+            debug: this.debug,
+
+            apnsSigningKeyId: this.signingKeyId,
+            apnsSigningKeySecretName: this.signingKeySecretName,
+            apnsAppBundleId: this.appBundleId,
+            apnsTeamId: this.teamId
         }
     }
  

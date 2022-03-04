@@ -7,12 +7,13 @@ import { Provider } from 'aws-cdk-lib/custom-resources'
 import { Construct } from 'constructs'
 import { join } from 'path'
 
-export type PlatformTypes = 'APNS' | 'APNS_SANDBOX'
+export type PlatformTypes = 'APNS' | 'APNS_SANDBOX' | 'GCM'
 
 export type AbstractSNSPlatformApplicationOptions = {
     name: string,
-    platform: PlatformTypes,
+    platform: PlatformTypes
     attributes?: { [key: string]: string }
+    debug: 'enabled' | 'disabled' | undefined
 }
 
 export abstract class AbstractSNSPlatformApplication extends Construct {
@@ -50,7 +51,7 @@ export abstract class AbstractSNSPlatformApplication extends Construct {
     }
 
     protected setupEventHandler(): NodejsFunction {
-        return new NodejsFunction(this, 'EventHandler', {
+        const onEventHandler = new NodejsFunction(this, 'EventHandler', {
             runtime: Runtime.NODEJS_14_X,
             memorySize: 1024,
             timeout: Duration.minutes(5),
@@ -69,10 +70,28 @@ export abstract class AbstractSNSPlatformApplication extends Construct {
             logRetention: RetentionDays.THREE_DAYS,
             description: 'Used to manage SNS Platform Application updates from CloudFormation / CDK -- created by @general-galactic/cdk-resources'
         })
+        if(onEventHandler.role){
+            this.grantPermissionsToCreatePlatformApplications(onEventHandler.role)
+        }
+        return onEventHandler
     }
 
     get PlatformApplicationArn(): string | undefined {
         return this.resource?.getAttString('PlatformApplicationArn')
+    }
+
+    grantPermissionsToCreatePlatformApplications(role: IRole){
+        role.addToPrincipalPolicy(new PolicyStatement({
+            actions: [
+                'SNS:CreatePlatformApplication',
+                'SNS:DeletePlatformApplication',
+                'SNS:ListPlatformApplications',
+                'SNS:SetPlatformApplicationAttributes'
+            ],
+            resources: [
+                `arn:aws:sns:${Stack.of(this).region}:${Stack.of(this).account}:*`
+            ]
+        }))
     }
 
 }
