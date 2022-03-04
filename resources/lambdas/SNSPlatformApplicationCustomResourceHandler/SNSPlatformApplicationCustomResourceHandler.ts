@@ -170,16 +170,8 @@ export class SNSPlatformApplicationCustomResourceHandler {
     private async handleNameChange(): Promise<CdkCustomResourceResponse>{
         this.log(`Platform application name changed: ${this.oldEventResourceProperties.name} -> ${this.eventResourceProperties.name}. Creating a new platform application.`)
 
-        const platformApplication = await this.findPlatformApplicationByName(this.oldEventResourceProperties.name)
-        if(!platformApplication){
-            this.log(`No platform application found '${this.oldEventResourceProperties.name}'`)
-            throw new Error(`No platform application found '${this.oldEventResourceProperties.name}'`)
-        }
-
-        if(!platformApplication.PlatformApplicationArn){
-            this.log(`No platform application arn found '${this.oldEventResourceProperties.name}'`)
-            throw new Error(`No platform application arn found '${this.oldEventResourceProperties.name}'`)
-        }
+        // Opting not to delete the old platform application here as it invalidates all endpoints and could be very destructive. We'll create
+        // a new platform application and the user can delete the old one if desired.
 
         const createCommand = new CreatePlatformApplicationCommand({
             Name: this.eventResourceProperties.name,
