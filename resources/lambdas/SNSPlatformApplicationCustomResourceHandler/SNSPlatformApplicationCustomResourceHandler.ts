@@ -198,6 +198,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
         }
     }
 
+    // TODO: probably want to limit by PLATFORM type as well
     private async findPlatformApplicationByName(name: string): Promise<PlatformApplication | undefined> {  
         this.log('FINDING PLATFORM APPLICATION: ', name)      
         const paginator = paginateListPlatformApplications({ client: this.snsClient }, {})

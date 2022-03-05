@@ -9,23 +9,24 @@ export class SNSPlatformApplicationExampleStack extends Stack {
       super(scope, id, props)
 
       const apnsPlatformApplication = new SNSPlatformApplicationAPNS(this, {
-        name: process.env.SNS_PLATFORM_APP_NAME!,
+        name: 'testAPNS',
         platform: 'APNS_SANDBOX',
+        debug: 'enabled',
+
+        // Apple / APNS Specific
         signingKeyId: process.env.SNS_PLATFORM_APP_SIGNING_KEY_ID!,
         signingKeySecretName: process.env.SNS_PLATFORM_APP_SIGNING_KEY_SECRET_NAME!,
         appBundleId: process.env.SNS_PLATFORM_APP_BUNDLE_ID!,
         teamId: process.env.SNS_PLATFORM_APP_TEAM_ID!,
-        debug: 'enabled'
       })
 
       const firebasePlatformApplication = new SNSPlatformApplicationFirebase(this, {
-        name: process.env.SNS_PLATFORM_APP_NAME!,
+        name: 'testGCM',
         platform: 'GCM',
-        signingKeyId: process.env.SNS_PLATFORM_APP_SIGNING_KEY_ID!,
-        signingKeySecretName: process.env.SNS_PLATFORM_APP_SIGNING_KEY_SECRET_NAME!,
-        appBundleId: process.env.SNS_PLATFORM_APP_BUNDLE_ID!,
-        teamId: process.env.SNS_PLATFORM_APP_TEAM_ID!,
-        debug: 'enabled'
+        debug: 'enabled',
+
+        // Firebase / GCM Specific
+        firebaseCloudMessagingServerKeySecretName: process.env.FIREBASE_CLOUD_MESSAGING_SERVER_KEY_SECRET_NAME!
       })
 
       new CfnOutput(this, 'apnsPlatformApplication', { value: apnsPlatformApplication.PlatformApplicationArn ?? '' })
