@@ -96,7 +96,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
     async handleEvent(): Promise<CdkCustomResourceResponse>{
         switch(this.event.RequestType){
             case 'Create':
-                return this.onCreate()
+                return this.onCreate(this.event.RequestId)
             case 'Update':
                 return this.onUpdate(this.event as CloudFormationCustomResourceUpdateEvent)
             case 'Delete':
@@ -104,7 +104,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
         }
     }
 
-    async onCreate(): Promise<CdkCustomResourceResponse> {
+    async onCreate(requestId: string): Promise<CdkCustomResourceResponse> {
         this.log('CREATING PLATFORM APPLICATION: ', this.eventResourceProperties.name)
         const command = new CreatePlatformApplicationCommand({
             Name: this.eventResourceProperties.name,
@@ -113,7 +113,7 @@ export class SNSPlatformApplicationCustomResourceHandler {
         })
         const result = await this.snsClient.send(command)
 
-        return this.buildResponse(`Custom::GG-SNSPlatformApplication:${this.eventResourceProperties.name}:${this.eventResourceProperties.platform}`, { PlatformApplicationArn: result.PlatformApplicationArn! })
+        return this.buildResponse(`Custom::GG-SNSPlatformApplication:${this.eventResourceProperties.name}:${this.eventResourceProperties.platform}:${requestId}`, { PlatformApplicationArn: result.PlatformApplicationArn! })
     }
 
     async onUpdate(event: CloudFormationCustomResourceUpdateEvent): Promise<CdkCustomResourceResponse> {

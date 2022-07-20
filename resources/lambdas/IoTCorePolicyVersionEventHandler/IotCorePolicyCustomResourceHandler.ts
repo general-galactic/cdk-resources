@@ -19,7 +19,7 @@ export class IotCorePolicyCustomResourceHandler {
     async handleEvent(event: CdkCustomResourceEvent): Promise<CdkCustomResourceResponse>{
         switch(event.RequestType){
             case 'Create':
-                return this.onCreate()
+                return this.onCreate(event.RequestId)
             case 'Update':
                 return this.onUpdate(event.PhysicalResourceId)
             case 'Delete':
@@ -27,10 +27,10 @@ export class IotCorePolicyCustomResourceHandler {
         }
     }
 
-    async onCreate(): Promise<CdkCustomResourceResponse> {
+    async onCreate(requestId: string): Promise<CdkCustomResourceResponse> {
         const policy = await this.createPolicy()
         if(!policy) throw new Error(`Unable to create policy.`)
-        return this.buildResponse(`Custom::VersionedIoTPolicy:${this.policyName}`, { deletedVersion: '', createdVersion: policy.version, policyArn: policy.policyArn })
+        return this.buildResponse(`Custom::VersionedIoTPolicy:${this.policyName}:${requestId}`, { deletedVersion: '', createdVersion: policy.version, policyArn: policy.policyArn })
     }
 
     async onUpdate(physicalResourceId: string): Promise<CdkCustomResourceResponse> {
