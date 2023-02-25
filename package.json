@@ -21,7 +21,7 @@
   "homepage": "https://github.com/general-galactic/cdk-resources#readme",
   "devDependencies": {
     "@types/jest": "^26.0.10",
-    "aws-cdk": "2.11.0",
+    "aws-cdk": "2.61.1",
     "jest": "^26.4.2",
     "ts-jest": "^26.2.0",
     "ts-node": "^9.0.0",
@@ -32,7 +32,7 @@
     "@aws-sdk/client-secrets-manager": "^3.272.0",
     "@aws-sdk/client-sns": "^3.272.0",
     "@types/aws-lambda": "^8.10.92",
-    "aws-cdk-lib": "2.15.0",
+    "aws-cdk-lib": "2.61.1",
     "aws-lambda": "^1.0.7",
     "constructs": "^10.0.0",
     "source-map-support": "^0.5.21"
