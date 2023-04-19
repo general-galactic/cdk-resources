@@ -52,7 +52,7 @@ export abstract class AbstractSNSPlatformApplication extends Construct {
 
     protected setupEventHandler(): NodejsFunction {
         const onEventHandler = new NodejsFunction(this, 'EventHandler', {
-            runtime: Runtime.NODEJS_14_X,
+            runtime: Runtime.NODEJS_18_X,
             memorySize: 1024,
             timeout: Duration.minutes(5),
             entry: join(__dirname, `../../../resources/lambdas/SNSPlatformApplicationCustomResourceHandler/index.js`),

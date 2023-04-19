@@ -65,7 +65,7 @@ export class IoTCorePolicy extends Construct {
 
     private setupEventHandler(): NodejsFunction {
         return new NodejsFunction(this, `IOTCorePolicyVersionEventHandler`, {
-            runtime: Runtime.NODEJS_14_X,
+            runtime: Runtime.NODEJS_18_X,
             memorySize: 1024,
             timeout: Duration.minutes(5),
             entry: join(__dirname, `../../../resources/lambdas/IoTCorePolicyVersionEventHandler/index.js`),
