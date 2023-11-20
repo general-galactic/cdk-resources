@@ -21,7 +21,8 @@
   "homepage": "https://github.com/general-galactic/cdk-resources#readme",
   "devDependencies": {
     "@types/node": "^20.9.2",
-    "aws-cdk": "2.75.1"
+    "aws-cdk": "2.75.1",
+    "typescript": "^5.2.2"
   },
   "dependencies": {
     "@aws-sdk/client-iot": "^3.315.0",
