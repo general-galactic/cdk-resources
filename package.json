@@ -5,6 +5,8 @@
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "scripts": {
+    "pin-cdk": "find-packages --pin 'latest' --ignore '@aws-cdk/asset-kubectl-v20' 'aws-cdk'",
+    "pin-cdk-lib": "find-packages --pin 'latest' --ignore '{@aws-cdk/asset-kubectl-v20,@aws-cdk/asset-awscli-v1,@aws-cdk/asset-node-proxy-agent-v6}' 'aws-cdk-lib'",
     "build": "tsc",
     "prepare": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -20,9 +22,9 @@
   },
   "homepage": "https://github.com/general-galactic/cdk-resources#readme",
   "devDependencies": {
-    "@general-galactic/find-packages": "^1.0.4",
+    "@general-galactic/find-packages": "^1.0.5",
     "@types/node": "^20.9.2",
-    "aws-cdk": "^2.110.0",
+    "aws-cdk": "2.110.0",
     "typescript": "^5.2.2"
   },
   "dependencies": {
@@ -30,7 +32,7 @@
     "@aws-sdk/client-secrets-manager": "3.421.0",
     "@aws-sdk/client-sns": "3.421.0",
     "@types/aws-lambda": "^8.10.92",
-    "aws-cdk-lib": "^2.110.0",
+    "aws-cdk-lib": "2.110.0",
     "aws-lambda": "^1.0.7",
     "constructs": "^10.0.0",
     "source-map-support": "^0.5.21"
